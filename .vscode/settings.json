@@ -1,0 +1,9 @@
+{
+  // Workspace settings for CodeCursor extension.
+  // Update these values with the extension's actual configuration keys.
+  "codecursors.enabled": true,
+  "codecursors.cursorStyle": "block",
+  "codecursors.lineHighlight": true,
+  "codecursors.showStatusBar": true,
+  "codecursors.animation": "smooth"
+}
