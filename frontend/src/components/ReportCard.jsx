@@ -1,44 +1,90 @@
 import { motion } from "framer-motion";
-import { MapPin, Clock } from "lucide-react";
+import { MapPin, Clock, CheckCircle2, AlertCircle } from "lucide-react";
+import { formatReportCategory } from "../config/reportCategories.js";
+import { getDaysUnderReview, getResolvedTimestamp } from "../utils/reportFilters.js";
 
-const statusColors = {
-  open: "bg-amber-500/20 text-amber-300",
-  in_progress: "bg-blue-500/20 text-blue-300",
-  resolved: "bg-brand-500/20 text-brand-100",
+const statusStyles = {
+  open: "border-theme-border bg-white text-black",
+  in_progress: "border-theme-border bg-neutral-200 text-black",
+  resolved: "border-theme-border bg-black text-white",
+  rejected: "border-theme-border bg-[#c2f2ff] text-blue-700",
 };
 
-export default function ReportCard({ report, onStatusChange, isAdmin }) {
+function formatResolvedDateTime(report) {
+  const ts = getResolvedTimestamp(report);
+  if (!ts) {
+    return "—";
+  }
+  return new Date(ts).toLocaleString(undefined, {
+    weekday: "short",
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+export default function ReportCard({
+  report,
+  areaName,
+  onStatusChange,
+  isAdmin,
+  variant = "default",
+  now = new Date(),
+}) {
+  const daysUnderReview = getDaysUnderReview(report, now);
+
   return (
     <motion.article
       layout
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      className="rounded-xl border border-slate-800 bg-slate-900/60 p-4"
+      className="card p-4"
     >
       <div className="flex flex-wrap items-start justify-between gap-2">
-        <h3 className="font-semibold text-slate-100">{report.title}</h3>
+        <h3 className="font-semibold text-black">{report.title}</h3>
         <span
-          className={`rounded-full px-2 py-0.5 text-xs font-medium capitalize ${statusColors[report.status]}`}
+          className={`rounded-full border px-2 py-0.5 text-xs font-medium capitalize ${statusStyles[report.status]}`}
         >
           {report.status.replace("_", " ")}
         </span>
       </div>
 
-      {report.description && (
-        <p className="mt-2 text-sm text-slate-400">{report.description}</p>
+      {variant === "under_review" && (
+        <p className="mt-2 flex items-center gap-1 text-sm font-semibold text-[#6b0f1a]">
+          <AlertCircle className="h-4 w-4" />
+          Under review for {daysUnderReview} day{daysUnderReview !== 1 ? "s" : ""}
+        </p>
       )}
 
-      <div className="mt-3 flex flex-wrap gap-3 text-xs text-slate-500">
-        <span className="flex items-center gap-1 capitalize">
-          {report.category.replace("_", " ")}
+      {variant === "resolved" && (
+        <p className="mt-2 flex items-center gap-1 text-sm text-black">
+          <CheckCircle2 className="h-4 w-4 text-[#6b0f1a]" />
+          Resolved: {formatResolvedDateTime(report)}
+        </p>
+      )}
+
+      {report.description && (
+        <p className="mt-2 text-sm text-black">{report.description}</p>
+      )}
+
+      <div className="mt-3 flex flex-wrap gap-3 text-xs text-black">
+        <span className="flex items-center gap-1">
+          {formatReportCategory(report.category, report.subcategory)}
         </span>
+        {areaName && (
+          <span className="rounded border border-theme-border px-1.5 py-0.5 font-medium">
+            {areaName}
+          </span>
+        )}
         <span className="flex items-center gap-1">
           <MapPin className="h-3 w-3" />
           {report.location.lat.toFixed(4)}, {report.location.lng.toFixed(4)}
         </span>
         <span className="flex items-center gap-1">
           <Clock className="h-3 w-3" />
-          {new Date(report.createdAt).toLocaleDateString()}
+          Issued {new Date(report.createdAt).toLocaleDateString()}
         </span>
       </div>
 
@@ -46,7 +92,7 @@ export default function ReportCard({ report, onStatusChange, isAdmin }) {
         <img
           src={report.photoUrl}
           alt=""
-          className="mt-3 h-32 w-full rounded-lg object-cover"
+          className="mt-3 h-32 w-full rounded-lg border border-theme-border object-cover"
         />
       )}
 
@@ -56,7 +102,7 @@ export default function ReportCard({ report, onStatusChange, isAdmin }) {
             <button
               type="button"
               onClick={() => onStatusChange(report._id, "in_progress")}
-              className="rounded-lg bg-blue-600/80 px-3 py-1 text-xs text-white hover:bg-blue-600"
+              className="btn-outline px-3 py-1 text-xs"
             >
               Mark in progress
             </button>
@@ -64,7 +110,7 @@ export default function ReportCard({ report, onStatusChange, isAdmin }) {
           <button
             type="button"
             onClick={() => onStatusChange(report._id, "resolved")}
-            className="rounded-lg bg-brand-600 px-3 py-1 text-xs text-white hover:bg-brand-700"
+            className="btn-primary px-3 py-1 text-xs"
           >
             Resolve
           </button>

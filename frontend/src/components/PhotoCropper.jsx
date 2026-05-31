@@ -52,8 +52,8 @@ export default function PhotoCropper({ imageSrc, onCropped, onCancel }) {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="relative h-64 overflow-hidden rounded-xl bg-slate-800">
+    <div className="space-y-4 text-black">
+      <div className="relative h-64 overflow-hidden rounded-xl border border-theme-border bg-white">
         <Cropper
           image={imageSrc}
           crop={crop}
@@ -71,21 +71,13 @@ export default function PhotoCropper({ imageSrc, onCropped, onCancel }) {
         step={0.1}
         value={zoom}
         onChange={(e) => setZoom(Number(e.target.value))}
-        className="w-full"
+        className="w-full accent-black"
       />
       <div className="flex gap-2">
-        <button
-          type="button"
-          onClick={handleApply}
-          className="flex-1 rounded-lg bg-brand-600 py-2 text-sm font-medium text-white hover:bg-brand-700"
-        >
+        <button type="button" onClick={handleApply} className="btn-primary flex-1 py-2 text-sm">
           Use photo
         </button>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:bg-slate-800"
-        >
+        <button type="button" onClick={onCancel} className="btn-outline px-4 py-2 text-sm">
           Cancel
         </button>
       </div>

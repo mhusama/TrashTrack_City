@@ -4,28 +4,36 @@ import toast from "react-hot-toast";
 import { Camera } from "lucide-react";
 import { reportsApi } from "../api/client.js";
 import PhotoCropper from "../components/PhotoCropper.jsx";
-
-const categories = [
-  { value: "overflow", label: "Bin overflow" },
-  { value: "illegal_dump", label: "Illegal dump" },
-  { value: "missed_pickup", label: "Missed pickup" },
-  { value: "damaged_bin", label: "Damaged bin" },
-  { value: "other", label: "Other" },
-];
+import LocationPickerMap from "../components/LocationPickerMap.jsx";
+import ReportCategoryPicker from "../components/ReportCategoryPicker.jsx";
+import {
+  SMELL_RISK_OPTIONS,
+  SENSITIVE_LOCATION_OPTIONS,
+  WASTE_SPREAD_OPTIONS,
+} from "../config/reportRiskFields.js";
+import { categoryRequiresSubcategory } from "../config/reportCategories.js";
+import { DHAKA_CENTER, isWithinDhakaBounds } from "../config/dhakaMap.js";
+import { reverseGeocode } from "../lib/reverseGeocode.js";
 
 export default function NewReportPage() {
   const navigate = useNavigate();
   const [form, setForm] = useState({
     title: "",
     description: "",
-    category: "other",
-    lat: "40.7128",
-    lng: "-74.0060",
+    category: "",
+    subcategory: "",
+    lat: String(DHAKA_CENTER[0]),
+    lng: String(DHAKA_CENTER[1]),
     address: "",
+    nearbyLandmark: "",
+    smellRisk: "",
+    wasteSpreadArea: "",
+    sensitiveLocations: [],
   });
   const [photoFile, setPhotoFile] = useState(null);
   const [previewSrc, setPreviewSrc] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [locationLoading, setLocationLoading] = useState(false);
 
   const handleFile = (e) => {
     const file = e.target.files?.[0];
@@ -39,12 +47,75 @@ export default function NewReportPage() {
     toast.success("Photo ready");
   };
 
+  const handleLocationChange = async (lat, lng) => {
+    setForm((prev) => ({
+      ...prev,
+      lat: lat.toFixed(5),
+      lng: lng.toFixed(5),
+    }));
+
+    setLocationLoading(true);
+    try {
+      const details = await reverseGeocode(lat, lng);
+      setForm((prev) => ({
+        ...prev,
+        lat: lat.toFixed(5),
+        lng: lng.toFixed(5),
+        address: details.addressText || details.displayName || "",
+        nearbyLandmark: details.landmark || "",
+      }));
+    } catch {
+      toast.error("Could not identify the address for this pin");
+    } finally {
+      setLocationLoading(false);
+    }
+  };
+
+  const handleCategoryChange = ({ category, subcategory }) => {
+    setForm((prev) => ({ ...prev, category, subcategory }));
+  };
+
+  const toggleSensitiveLocation = (value) => {
+    setForm((prev) => {
+      const selected = prev.sensitiveLocations.includes(value)
+        ? prev.sensitiveLocations.filter((item) => item !== value)
+        : [...prev.sensitiveLocations, value];
+      return { ...prev, sensitiveLocations: selected };
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setSubmitting(true);
 
+    if (!form.category) {
+      toast.error("Please select a category");
+      return;
+    }
+    if (categoryRequiresSubcategory(form.category) && !form.subcategory) {
+      toast.error("Please select a subcategory for the chosen waste type");
+      return;
+    }
+
+    const lat = Number(form.lat);
+    const lng = Number(form.lng);
+    if (!isWithinDhakaBounds(lat, lng)) {
+      toast.error("Please place the pin inside Dhaka city");
+      return;
+    }
+
+    setSubmitting(true);
     const data = new FormData();
-    Object.entries(form).forEach(([key, value]) => data.append(key, value));
+    data.append("title", form.title);
+    data.append("description", form.description);
+    data.append("category", form.category);
+    data.append("subcategory", form.subcategory);
+    data.append("lat", form.lat);
+    data.append("lng", form.lng);
+    data.append("address", form.address);
+    data.append("nearbyLandmark", form.nearbyLandmark);
+    data.append("smellRisk", form.smellRisk);
+    data.append("wasteSpreadArea", form.wasteSpreadArea);
+    data.append("sensitiveLocations", JSON.stringify(form.sensitiveLocations));
     if (photoFile) data.append("photo", photoFile);
 
     try {
@@ -59,105 +130,154 @@ export default function NewReportPage() {
   };
 
   return (
-    <div className="mx-auto max-w-lg space-y-6">
-      <h1 className="text-2xl font-bold">New report</h1>
+    <div className="new-report-page w-full text-black">
+      <h1 className="mb-6 text-2xl font-bold text-black">New report</h1>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <label className="block space-y-1 text-sm">
-          <span className="text-slate-400">Title</span>
-          <input
-            required
-            value={form.title}
-            onChange={(e) => setForm({ ...form, title: e.target.value })}
-            className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 outline-none focus:border-brand-500"
-          />
-        </label>
-
-        <label className="block space-y-1 text-sm">
-          <span className="text-slate-400">Description</span>
-          <textarea
-            rows={3}
-            value={form.description}
-            onChange={(e) => setForm({ ...form, description: e.target.value })}
-            className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 outline-none focus:border-brand-500"
-          />
-        </label>
-
-        <label className="block space-y-1 text-sm">
-          <span className="text-slate-400">Category</span>
-          <select
-            value={form.category}
-            onChange={(e) => setForm({ ...form, category: e.target.value })}
-            className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2"
-          >
-            {categories.map((c) => (
-              <option key={c.value} value={c.value}>
-                {c.label}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <div className="grid grid-cols-2 gap-3">
-          <label className="block space-y-1 text-sm">
-            <span className="text-slate-400">Latitude</span>
-            <input
-              required
-              type="number"
-              step="any"
-              value={form.lat}
-              onChange={(e) => setForm({ ...form, lat: e.target.value })}
-              className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2"
-            />
-          </label>
-          <label className="block space-y-1 text-sm">
-            <span className="text-slate-400">Longitude</span>
-            <input
-              required
-              type="number"
-              step="any"
-              value={form.lng}
-              onChange={(e) => setForm({ ...form, lng: e.target.value })}
-              className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2"
-            />
-          </label>
-        </div>
-
-        <label className="block space-y-1 text-sm">
-          <span className="text-slate-400">Address (optional)</span>
-          <input
-            value={form.address}
-            onChange={(e) => setForm({ ...form, address: e.target.value })}
-            className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2"
-          />
-        </label>
-
-        <div className="space-y-2">
-          <span className="text-sm text-slate-400">Photo (optional)</span>
-          {previewSrc ? (
-            <PhotoCropper
-              imageSrc={previewSrc}
-              onCropped={handleCropped}
-              onCancel={() => setPreviewSrc(null)}
-            />
-          ) : (
-            <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-slate-700 py-8 hover:border-brand-500">
-              <Camera className="h-5 w-5 text-slate-500" />
-              <span className="text-sm text-slate-400">
-                {photoFile ? photoFile.name : "Upload & crop photo"}
-              </span>
-              <input type="file" accept="image/*" className="hidden" onChange={handleFile} />
+      <form onSubmit={handleSubmit} className="new-report-form space-y-6">
+        <div className="new-report-column space-y-4">
+            <label className="block space-y-1">
+              <span className="label-text">Title</span>
+              <input
+                required
+                value={form.title}
+                onChange={(e) => setForm({ ...form, title: e.target.value })}
+                className="input-field"
+              />
             </label>
-          )}
+
+            <label className="block space-y-1">
+              <span className="label-text">Description</span>
+              <textarea
+                rows={4}
+                value={form.description}
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
+                className="input-field min-h-[7rem]"
+              />
+            </label>
+
+            <ReportCategoryPicker
+              category={form.category}
+              subcategory={form.subcategory}
+              onChange={handleCategoryChange}
+            />
+
+            <fieldset className="space-y-2">
+              <legend className="label-text">Smell/Health Risk Indicator</legend>
+              <div className="new-report-options-stack rounded-xl border border-theme-border p-3">
+                {SMELL_RISK_OPTIONS.map((option) => (
+                  <label
+                    key={option.value}
+                    className="flex cursor-pointer items-center gap-2 text-sm"
+                  >
+                    <input
+                      type="radio"
+                      name="smellRisk"
+                      value={option.value}
+                      checked={form.smellRisk === option.value}
+                      onChange={(e) => setForm({ ...form, smellRisk: e.target.value })}
+                      className="accent-[#6b0f1a]"
+                    />
+                    {option.label}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+
+            <fieldset className="space-y-2">
+              <legend className="label-text">Waste Spread Area</legend>
+              <div className="new-report-options-stack rounded-xl border border-theme-border p-3">
+                {WASTE_SPREAD_OPTIONS.map((option) => (
+                  <label
+                    key={option.value}
+                    className="flex cursor-pointer items-center gap-2 text-sm"
+                  >
+                    <input
+                      type="radio"
+                      name="wasteSpreadArea"
+                      value={option.value}
+                      checked={form.wasteSpreadArea === option.value}
+                      onChange={(e) => setForm({ ...form, wasteSpreadArea: e.target.value })}
+                      className="accent-[#6b0f1a]"
+                    />
+                    {option.label}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+
+            <fieldset className="space-y-2">
+              <legend className="label-text">Is the waste near sensitive locations?</legend>
+              <div className="new-report-options-stack rounded-xl border border-theme-border p-3">
+                {SENSITIVE_LOCATION_OPTIONS.map((option) => (
+                  <label
+                    key={option.value}
+                    className="flex cursor-pointer items-center gap-2 text-sm"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={form.sensitiveLocations.includes(option.value)}
+                      onChange={() => toggleSensitiveLocation(option.value)}
+                      className="accent-[#6b0f1a]"
+                    />
+                    {option.label}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+
+            <LocationPickerMap lat={form.lat} lng={form.lng} onChange={handleLocationChange} />
+
+            <label className="block space-y-1">
+              <span className="label-text">Location</span>
+              <input
+                readOnly
+                value={locationLoading ? "Identifying location…" : form.address}
+                placeholder="Auto-filled when you pin a location on the map"
+                className="input-field bg-[#fce1ee]/40"
+              />
+              <p className="text-xs text-black">
+                Filled automatically from your pinned map location.
+              </p>
+            </label>
+
+            <label className="block space-y-1">
+              <span className="label-text">Nearby landmark</span>
+              <input
+                readOnly
+                value={locationLoading ? "Identifying nearby landmark…" : form.nearbyLandmark}
+                placeholder='e.g. "Near Kaliganj Bus Stand"'
+                className="input-field bg-[#fce1ee]/40"
+              />
+              <p className="text-xs text-black">
+                A nearby place of interest is detected automatically from the pin.
+              </p>
+            </label>
+
+            <div className="space-y-2">
+              <span className="label-text">Photo (optional)</span>
+              {previewSrc ? (
+                <PhotoCropper
+                  imageSrc={previewSrc}
+                  onCropped={handleCropped}
+                  onCancel={() => setPreviewSrc(null)}
+                />
+              ) : (
+                <label className="flex min-h-[10rem] cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-theme-border py-8 transition-colors hover:bg-black hover:text-white">
+                  <Camera className="h-5 w-5" />
+                  <span className="text-sm">
+                    {photoFile ? photoFile.name : "Upload & crop photo"}
+                  </span>
+                  <input type="file" accept="image/*" className="hidden" onChange={handleFile} />
+                </label>
+              )}
+            </div>
         </div>
 
-        <button
-          type="submit"
-          disabled={submitting}
-          className="w-full rounded-lg bg-brand-600 py-3 font-medium text-white hover:bg-brand-700 disabled:opacity-60"
-        >
-          {submitting ? "Submitting…" : "Submit report"}
-        </button>
+        <div className="new-report-submit-row">
+          <button type="submit" disabled={submitting} className="guest-cta-btn px-8 py-3">
+            {submitting ? "Submitting…" : "Submit report"}
+          </button>
+        </div>
       </form>
     </div>
   );

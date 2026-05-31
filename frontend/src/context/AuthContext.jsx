@@ -21,15 +21,15 @@ export function AuthProvider({ children }) {
       .finally(() => setLoading(false));
   }, []);
 
-  const login = async (email, password) => {
-    const { data } = await authApi.login({ email, password });
+  const login = async (email, password, role, crewSubRole = "") => {
+    const { data } = await authApi.login({ email, password, role, crewSubRole });
     localStorage.setItem("token", data.token);
     setUser(data.user);
     return data.user;
   };
 
-  const register = async (name, email, password) => {
-    const { data } = await authApi.register({ name, email, password });
+  const register = async (formData) => {
+    const { data } = await authApi.register(formData);
     localStorage.setItem("token", data.token);
     setUser(data.user);
     return data.user;
@@ -41,7 +41,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, setUser }}>
       {children}
     </AuthContext.Provider>
   );

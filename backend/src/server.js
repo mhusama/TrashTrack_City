@@ -4,16 +4,40 @@ import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
 import { connectDB } from "./config/db.js";
+import { initUserModels } from "./models/User.js";
+import "./models/TeamRegistry.js";
+import "./models/Vehicle.js";
+import { logSmtpStatus } from "./utils/mailer.js";
 import authRoutes from "./routes/authRoutes.js";
 import reportRoutes from "./routes/reportRoutes.js";
+import geocodeRoutes from "./routes/geocodeRoutes.js";
+import teamRoutes from "./routes/teamRoutes.js";
+import crewRoutes from "./routes/crewRoutes.js";
+import chatRoutes from "./routes/chatRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
+import statisticsRoutes from "./routes/statisticsRoutes.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+const allowedOrigins = [
+  process.env.CLIENT_URL,
+  "http://localhost:5173",
+  "http://localhost:5174",
+]
+  .filter(Boolean)
+  .map((url) => url.trim().replace(/\/$/, ""));
+
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || "http://localhost:5173",
+    origin(origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+        return;
+      }
+      callback(null, false);
+    },
     credentials: true,
   })
 );
@@ -26,6 +50,12 @@ app.get("/api/health", (_req, res) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/reports", reportRoutes);
+app.use("/api/geocode", geocodeRoutes);
+app.use("/api/teams", teamRoutes);
+app.use("/api/crew", crewRoutes);
+app.use("/api/chat", chatRoutes);
+app.use("/api/notifications", notificationRoutes);
+app.use("/api/statistics", statisticsRoutes);
 
 app.use((err, _req, res, _next) => {
   console.error(err);
@@ -34,6 +64,8 @@ app.use((err, _req, res, _next) => {
 
 async function start() {
   await connectDB();
+  initUserModels();
+  logSmtpStatus();
   app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
   });

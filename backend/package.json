@@ -5,7 +5,11 @@
   "main": "src/server.js",
   "scripts": {
     "dev": "nodemon src/server.js",
-    "start": "node src/server.js"
+    "start": "node src/server.js",
+    "test:smtp": "node scripts/test-smtp.js",
+    "backfill:user-ids": "node scripts/backfill-user-ids.js",
+    "backfill:report-ids": "node scripts/backfill-report-ids.js",
+    "seed:vehicles": "node scripts/seed-vehicles.js"
   },
   "type": "module",
   "keywords": [],

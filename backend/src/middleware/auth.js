@@ -1,4 +1,4 @@
-import { User } from "../models/User.js";
+import { findUserByIdForAuth } from "../models/User.js";
 import { verifyToken } from "../utils/token.js";
 
 export async function requireAuth(req, res, next) {
@@ -9,12 +9,12 @@ export async function requireAuth(req, res, next) {
     return res.status(401).json({ message: "Authentication required" });
   }
 
-  const userId = verifyToken(token);
-  if (!userId) {
+  const decoded = verifyToken(token);
+  if (!decoded?.sub) {
     return res.status(401).json({ message: "Invalid or expired token" });
   }
 
-  const user = await User.findById(userId).select("-password");
+  const user = await findUserByIdForAuth(decoded.sub, decoded.role);
   if (!user) {
     return res.status(401).json({ message: "User not found" });
   }
@@ -26,6 +26,20 @@ export async function requireAuth(req, res, next) {
 export function requireAdmin(req, res, next) {
   if (req.user?.role !== "admin") {
     return res.status(403).json({ message: "Admin access required" });
+  }
+  next();
+}
+
+export function requireStaff(req, res, next) {
+  if (req.user?.role !== "admin" && req.user?.role !== "cleaning_crew") {
+    return res.status(403).json({ message: "Staff access required" });
+  }
+  next();
+}
+
+export function requireCrew(req, res, next) {
+  if (req.user?.role !== "cleaning_crew") {
+    return res.status(403).json({ message: "Cleaning crew access required" });
   }
   next();
 }

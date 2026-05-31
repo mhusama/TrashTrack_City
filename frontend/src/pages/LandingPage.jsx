@@ -6,7 +6,7 @@ const features = [
   {
     icon: MapPin,
     title: "Map reports",
-    text: "Pin overflow bins, illegal dumps, and missed pickups on an interactive city map.",
+    text: "Pin overflow bins, illegal dumps, and missed pickups on the Dhaka city map.",
   },
   {
     icon: Shield,
@@ -22,30 +22,23 @@ const features = [
 
 export default function LandingPage() {
   return (
-    <div className="space-y-16 py-8 text-center">
+    <div className="space-y-16 py-8 text-center text-black">
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         className="space-y-6"
       >
-        <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-          Keep your city <span className="text-brand-500">clean</span>
+        <h1 className="text-4xl font-bold tracking-tight text-[#6b0f1a] sm:text-5xl">
+          Keep your city clean
         </h1>
-        <p className="mx-auto max-w-xl text-lg text-slate-400">
-          TrashTrack City is a sample MERN app for reporting and tracking waste issues
-          across your neighborhood.
+        <p className="mx-auto max-w-xl text-lg text-black">
+          TrashTrack City helps you report and track waste issues across Dhaka.
         </p>
         <div className="flex flex-wrap justify-center gap-3">
-          <Link
-            to="/register"
-            className="rounded-lg bg-brand-600 px-6 py-3 font-medium text-white hover:bg-brand-700"
-          >
+          <Link to="/register" className="guest-cta-btn px-6 py-3">
             Get started
           </Link>
-          <Link
-            to="/login"
-            className="rounded-lg border border-slate-700 px-6 py-3 text-slate-300 hover:bg-slate-800"
-          >
+          <Link to="/login" className="guest-cta-btn px-6 py-3">
             Sign in
           </Link>
         </div>
@@ -58,11 +51,11 @@ export default function LandingPage() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 * i }}
-            className="rounded-xl border border-slate-800 bg-slate-900/50 p-6"
+            className="card p-6"
           >
-            <Icon className="mb-3 h-8 w-8 text-brand-500" />
-            <h3 className="font-semibold">{title}</h3>
-            <p className="mt-2 text-sm text-slate-400">{text}</p>
+            <Icon className="mb-3 h-8 w-8 text-[#6b0f1a]" />
+            <h3 className="font-semibold text-[#6b0f1a]">{title}</h3>
+            <p className="mt-2 text-sm text-black">{text}</p>
           </motion.div>
         ))}
       </div>

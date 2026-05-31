@@ -1,66 +1,58 @@
 import { Link, NavLink, Outlet } from "react-router-dom";
-import { MapPin, LogOut, Trash2, PlusCircle, LayoutDashboard } from "lucide-react";
+import { LogOut, LayoutDashboard, ClipboardList } from "lucide-react";
 import { useAuth } from "../context/AuthContext.jsx";
+import { homePathForRole, roleLabel } from "../config/roles.js";
+import { mediaUrl } from "../utils/mediaUrl.js";
 
 const navClass = ({ isActive }) =>
-  `flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition ${
-    isActive
-      ? "bg-brand-600/20 text-brand-100"
-      : "text-slate-400 hover:bg-slate-800 hover:text-slate-100"
-  }`;
+  isActive ? "nav-link nav-link-active" : "nav-link";
 
 export default function Layout() {
   const { user, logout } = useAuth();
+  const dashboardPath = user ? homePathForRole(user.role) : "/";
 
   return (
-    <div className="min-h-screen">
-      <header className="border-b border-slate-800 bg-slate-900/80 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4">
-          <Link to="/" className="flex items-center gap-2 font-semibold text-brand-100">
-            <Trash2 className="h-6 w-6 text-brand-500" />
-            TrashTrack City
+    <div className="min-h-screen bg-white">
+      <header className="site-navbar">
+        <div className="header-bar grid grid-cols-[1fr_auto_1fr] items-center gap-4">
+          <Link to={dashboardPath} className="logo-link justify-self-start" aria-label="Trash Track City home">
+            <img src="/logo.png" alt="Trash Track City" className="header-logo" />
           </Link>
 
-          {user && (
-            <nav className="flex flex-wrap items-center gap-1">
-              <NavLink to="/" end className={navClass}>
-                <LayoutDashboard className="h-4 w-4" />
-                Dashboard
-              </NavLink>
-              <NavLink to="/map" className={navClass}>
-                <MapPin className="h-4 w-4" />
-                Map
-              </NavLink>
-              <NavLink to="/reports/new" className={navClass}>
-                <PlusCircle className="h-4 w-4" />
-                New report
-              </NavLink>
-            </nav>
-          )}
-
-          <div className="flex items-center gap-3 text-sm">
+          <nav className="flex flex-wrap items-center justify-center gap-1 justify-self-center">
             {user ? (
               <>
-                <span className="hidden text-slate-400 sm:inline">
-                  {user.name}
-                  <span className="ml-1 rounded bg-slate-800 px-1.5 py-0.5 text-xs">
-                    {user.role}
-                  </span>
-                </span>
-                <button
-                  type="button"
-                  onClick={logout}
-                  className="flex items-center gap-1 rounded-lg border border-slate-700 px-3 py-1.5 text-slate-300 hover:bg-slate-800"
-                >
-                  <LogOut className="h-4 w-4" />
+                {user.role === "cleaning_crew" && (
+                  <NavLink to="/crew" className={navClass}>
+                    <LayoutDashboard />
+                    Dashboard
+                  </NavLink>
+                )}
+              </>
+            ) : (
+              <span className="header-nav-title header-guest-brand">TrashTrack City</span>
+            )}
+          </nav>
+
+          <div className="header-actions flex items-center justify-end gap-3 text-black justify-self-end">
+            {user ? (
+              <>
+                {user.profilePicture ? (
+                  <img
+                    src={mediaUrl(user.profilePicture)}
+                    alt=""
+                    className="hidden h-9 w-9 rounded-full border border-theme-border object-cover sm:block"
+                  />
+                ) : null}
+                <span className="header-username hidden font-bold sm:inline">{user.name}</span>
+                <span className="header-box">{roleLabel(user.role)}</span>
+                <button type="button" onClick={logout} className="header-box header-logout-btn">
+                  <LogOut style={{ width: "1em", height: "1em" }} />
                   Logout
                 </button>
               </>
             ) : (
-              <NavLink
-                to="/login"
-                className="rounded-lg bg-brand-600 px-4 py-2 font-medium text-white hover:bg-brand-700"
-              >
+              <NavLink to="/login" className="guest-cta-btn header-btn">
                 Sign in
               </NavLink>
             )}
@@ -68,7 +60,13 @@ export default function Layout() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-4 py-8">
+      <main
+        className={`mx-auto px-4 py-8 text-black ${
+          user?.role === "admin" || user?.role === "resident"
+            ? "max-w-[90rem]"
+            : "max-w-6xl"
+        }`}
+      >
         <Outlet />
       </main>
     </div>

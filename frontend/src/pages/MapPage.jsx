@@ -16,13 +16,13 @@ export default function MapPage() {
   }, []);
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-bold">City map</h1>
-      <p className="text-slate-400">
-        All reported waste locations. Click markers for details.
+    <div className="space-y-4 text-black">
+      <h1 className="text-2xl font-bold text-black">Dhaka city map</h1>
+      <p className="text-black">
+        Waste reports across Dhaka city. Hover for address details; click markers for reports.
       </p>
       {loading ? (
-        <p className="text-slate-500">Loading…</p>
+        <p className="text-black">Loading…</p>
       ) : (
         <ReportsMap reports={reports} height="520px" />
       )}

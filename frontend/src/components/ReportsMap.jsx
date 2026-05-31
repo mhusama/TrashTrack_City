@@ -1,47 +1,65 @@
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import { useEffect } from "react";
+import { MapContainer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
+import { DHAKA_BOUNDS, DHAKA_CENTER, DHAKA_ZOOM } from "../config/dhakaMap.js";
+import { reportMarkerIcon } from "../lib/leafletIcons.js";
+import MapHoverInspector from "./MapHoverInspector.jsx";
+import MapTileLayer from "./MapTileLayer.jsx";
 
-const defaultCenter = [40.7128, -74.006];
+function FitReportBounds({ reports }) {
+  const map = useMap();
 
-const markerIcon = new L.Icon({
-  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
-});
+  useEffect(() => {
+    if (reports.length === 0) {
+      map.setView(DHAKA_CENTER, DHAKA_ZOOM.default);
+      return;
+    }
+
+    const bounds = L.latLngBounds(
+      reports.map((report) => [report.location.lat, report.location.lng])
+    );
+    map.fitBounds(bounds, { padding: [48, 48], maxZoom: DHAKA_ZOOM.max });
+  }, [map, reports]);
+
+  return null;
+}
 
 export default function ReportsMap({ reports, height = "400px" }) {
-  const center =
-    reports.length > 0
-      ? [reports[0].location.lat, reports[0].location.lng]
-      : defaultCenter;
-
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-800" style={{ height }}>
+    <div
+      className="relative z-0 overflow-hidden rounded-xl border border-theme-border"
+      style={{ height }}
+    >
       <MapContainer
-        center={center}
-        zoom={13}
+        center={DHAKA_CENTER}
+        zoom={DHAKA_ZOOM.default}
+        minZoom={DHAKA_ZOOM.min}
+        maxZoom={DHAKA_ZOOM.max}
+        maxBounds={DHAKA_BOUNDS}
+        maxBoundsViscosity={1}
         scrollWheelZoom
-        className="h-full w-full"
+        className="map-hover-cursor h-full w-full"
         style={{ height: "100%", minHeight: height }}
       >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
+        <MapTileLayer />
+        <MapHoverInspector />
+        <FitReportBounds reports={reports} />
         {reports.map((report) => (
           <Marker
             key={report._id}
             position={[report.location.lat, report.location.lng]}
-            icon={markerIcon}
+            icon={reportMarkerIcon}
           >
             <Popup>
               <strong>{report.title}</strong>
               <br />
               <span className="capitalize">{report.status.replace("_", " ")}</span>
+              {report.location.address ? (
+                <>
+                  <br />
+                  <span className="text-sm">{report.location.address}</span>
+                </>
+              ) : null}
             </Popup>
           </Marker>
         ))}
