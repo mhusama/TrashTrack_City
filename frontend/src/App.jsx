@@ -13,6 +13,7 @@ import NewReportPage from "./pages/NewReportPage.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
 import RegisterPage from "./pages/RegisterPage.jsx";
 import ResetPasswordPage from "./pages/ResetPasswordPage.jsx";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage.jsx";
 import NotificationsPage from "./pages/NotificationsPage.jsx";
 import AdminReportDetailPage from "./pages/AdminReportDetailPage.jsx";
 import AdminPendingApprovalDetailPage from "./pages/AdminPendingApprovalDetailPage.jsx";
@@ -130,6 +131,7 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        <Route path="forgot-password" element={<ForgotPasswordPage />} />
         <Route path="reset-password" element={<ResetPasswordPage />} />
         <Route
           path="map"

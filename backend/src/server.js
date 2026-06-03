@@ -14,6 +14,8 @@ import geocodeRoutes from "./routes/geocodeRoutes.js";
 import teamRoutes from "./routes/teamRoutes.js";
 import crewRoutes from "./routes/crewRoutes.js";
 import chatRoutes from "./routes/chatRoutes.js";
+import leadershipChatRoutes from "./routes/leadershipChatRoutes.js";
+import teamChatRoutes from "./routes/teamChatRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import statisticsRoutes from "./routes/statisticsRoutes.js";
 
@@ -54,6 +56,8 @@ app.use("/api/geocode", geocodeRoutes);
 app.use("/api/teams", teamRoutes);
 app.use("/api/crew", crewRoutes);
 app.use("/api/chat", chatRoutes);
+app.use("/api/leadership-chat", leadershipChatRoutes);
+app.use("/api/team-chat", teamChatRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/statistics", statisticsRoutes);
 

@@ -1,13 +1,26 @@
 import DashboardProfileLink from "./DashboardProfileLink.jsx";
 
-export default function CrewSidebar({ activeView, onViewChange, teamLabel = "My Team" }) {
+export default function CrewSidebar({
+  activeView,
+  onViewChange,
+  teamLabel = "My Team",
+  showLeadershipChat = false,
+}) {
   const items = [
     { id: "dashboard", label: "Dashboard" },
     { id: "team", label: teamLabel },
     { id: "map", label: "Map" },
     { id: "tasks", label: "Task Reports" },
-    { id: "chat", label: "Chat with the Teams" },
+    { id: "team-chat", label: "Chat with your team" },
+    { id: "chat", label: "Chat with all teams" },
   ];
+
+  if (showLeadershipChat) {
+    items.push({
+      id: "leadership-chat",
+      label: "Chat with Admins and Leaders",
+    });
+  }
 
   const statisticsItem = { id: "statistics", label: "Statistics" };
 

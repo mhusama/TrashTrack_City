@@ -138,3 +138,28 @@ export async function sendReportNotification({ to, report }) {
     text: `A new trash report was submitted.\n\nTitle: ${report.title}\nStatus: ${report.status}\nCategory: ${report.category}`,
   });
 }
+
+export async function sendNotificationEmail({ to, subject, text, html }) {
+  const transport = getTransporter();
+  if (!transport) {
+    console.log("[mailer] SMTP not configured — skipping email to", to);
+    return { sent: false, error: "SMTP not configured" };
+  }
+
+  const { from, user } = smtpEnv();
+
+  try {
+    const info = await transport.sendMail({
+      from: from || user,
+      to,
+      subject: subject || "Notification from TrashTrack City",
+      text: text || "",
+      html: html || undefined,
+    });
+    console.log("[mailer] Email sent successfully:", { to, subject, messageId: info.messageId });
+    return { sent: true, info };
+  } catch (err) {
+    console.error("[mailer] Failed to send notification email:", err?.message || err);
+    return { sent: false, error: err?.message || String(err) };
+  }
+}

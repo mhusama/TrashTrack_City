@@ -16,6 +16,13 @@ export function crewStatusLabel(crewStatus) {
   return CREW_STATUS_LABELS[crewStatus] || crewStatus || "Assigned";
 }
 
+export function crewStatusLabelForReport(report) {
+  if (report?.status === "resolved") {
+    return CREW_STATUS_LABELS.approved;
+  }
+  return crewStatusLabel(report?.crewStatus);
+}
+
 export function crewMapMarkerColor(crewStatus) {
   return CREW_MAP_MARKER_COLORS[crewStatus] || CREW_MAP_MARKER_COLORS.assigned;
 }

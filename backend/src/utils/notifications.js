@@ -1,6 +1,7 @@
 import { Notification } from "../models/Notification.js";
 import { Report } from "../models/Report.js";
 import { getResidentUserModel, getUserModel } from "../models/User.js";
+import { sendReportNotification, sendNotificationEmail } from "./mailer.js";
 
 const NEARBY_KM = 2;
 const SAME_LOCATION_KM = 0.15;
@@ -56,6 +57,17 @@ export async function notifyReportAssigned(report) {
       type: "team_assigned",
       report: report._id,
     });
+    // Send email to resident notifying under review
+    try {
+      const residentEmail = report.reportedBy?.email || (report.reportedBy && report.reportedBy.email) || null;
+      if (residentEmail) {
+        const subj = `Your report is under review: ${report.title}`;
+        const txt = `Your report "${report.title}" has been assigned to ${report.assignedTeam} and is now under review.`;
+        sendNotificationEmail({ to: residentEmail, subject: subj, text: txt }).catch(console.error);
+      }
+    } catch (e) {
+      console.error("[notifyReportAssigned] failed to email resident", e?.message || e);
+    }
   }
   await notifyCrewTeam(
     report,
@@ -72,21 +84,44 @@ export async function notifyReportApproved(report) {
     await Notification.create({
       user: ownerId,
       message: `Your report "${report.title}"${idLabel} issued ${dateLabel} has been approved and marked Resolved.`,
-      type: "report_approved",
+      type: "resident_task_completed",
       report: report._id,
     });
+
+    const residentEmail = report.reportedBy?.email;
+    console.log("[notifyReportApproved] Sending email to resident:", {
+      email: residentEmail,
+      title: report.title,
+      reportId: report.reportId,
+    });
+
+    if (residentEmail) {
+      sendNotificationEmail({
+        to: residentEmail,
+        subject: `Your task is completed: ${report.title}`,
+        text: `Good news! Your report "${report.title}" has been reviewed and approved by the admin. The task is now complete.`,
+      }).catch((err) => {
+        console.error("[notifyReportApproved] Email send error:", err);
+      });
+    } else {
+      console.warn("[notifyReportApproved] No resident email found for report:", report.reportId);
+    }
   }
 
   await notifyCrewTeam(
     report,
-    `Report "${report.title}"${idLabel} (issued ${dateLabel}) was approved by the Admin.`
+    `Report "${report.title}"${idLabel} (issued ${dateLabel}) was approved by the Admin.`,
+    {
+      subject: `Task approved: ${report.title}`,
+      text: `Your team's task "${report.title}" has been approved by the admin. Great work!`,
+    }
   );
 }
 
-async function notifyCrewTeam(report, message) {
+async function notifyCrewTeam(report, message, emailInfo = {}) {
   if (!report.assignedTeam) return;
   const CrewUser = getUserModel("cleaning_crew");
-  const crew = await CrewUser.find({ teamName: report.assignedTeam }).select("_id");
+  const crew = await CrewUser.find({ teamName: report.assignedTeam }).select("_id email name").lean();
   if (!crew.length) return;
 
   await Notification.insertMany(
@@ -96,6 +131,20 @@ async function notifyCrewTeam(report, message) {
       type: "crew_update",
       report: report._id,
     }))
+  );
+
+  // Send email to each crew member (best-effort)
+  await Promise.all(
+    crew.map((member) => {
+      if (!member.email) return Promise.resolve();
+      const subj = emailInfo.subject || `Task update: ${report.title}`;
+      const txt =
+        emailInfo.text ||
+        `Your team has an update for the task "${report.title}". Please check the crew dashboard for details.`;
+      return sendNotificationEmail({ to: member.email, subject: subj, text: txt }).catch((err) =>
+        console.error("[mailer] Failed to email crew member", member.email, err?.message || err)
+      );
+    })
   );
 }
 
@@ -154,5 +203,95 @@ export async function notifyResidentsAboutNewReport(report) {
 
   if (toCreate.length) {
     await Notification.insertMany(toCreate);
+  }
+}
+
+export async function notifyAdminsAboutReview(report) {
+  try {
+    const AdminModel = getUserModel("admin");
+    const ResidentModel = getResidentUserModel();
+
+    const admins = await AdminModel.find().select("_id email name").lean();
+    const legacyAdmins = await ResidentModel.find({ role: "admin" }).select("_id email name").lean();
+
+    const combined = [...(admins || []), ...(legacyAdmins || [])];
+    const map = new Map();
+    for (const a of combined) {
+      const key = (a.email || a._id).toString();
+      if (!map.has(key)) map.set(key, a);
+    }
+    const uniqueAdmins = Array.from(map.values());
+    if (!uniqueAdmins.length) return;
+
+    const idLabel = report.reportId ? ` (ID: ${report.reportId})` : "";
+    const dateLabel = formatReportDate(report.createdAt);
+    const message = `Report "${report.title}"${idLabel} issued ${dateLabel} has been submitted for approval and is under review.`;
+
+    await Notification.insertMany(
+      uniqueAdmins.map((a) => ({
+        user: a._id,
+        message,
+        type: "admin_review_needed",
+        report: report._id,
+      }))
+    );
+
+    await Promise.all(
+      uniqueAdmins.map((a) =>
+        sendNotificationEmail({
+          to: a.email,
+          subject: `Task under review: ${report.title}`,
+          text: `The report "${report.title}" has been completed by the assigned team and is now waiting for admin approval.`,
+        }).catch((err) =>
+          console.error("[mailer] Failed to email admin", a.email, err?.message || err)
+        )
+      )
+    );
+  } catch (err) {
+    console.error("[notifyAdminsAboutReview] error:", err?.message || err);
+  }
+}
+
+export async function notifyAdminsAboutNewReport(report) {
+  try {
+    const AdminModel = getUserModel("admin");
+    const ResidentModel = getResidentUserModel();
+
+    const admins = await AdminModel.find().select("_id email name").lean();
+    const legacyAdmins = await ResidentModel.find({ role: "admin" }).select("_id email name").lean();
+
+    const combined = [...(admins || []), ...(legacyAdmins || [])];
+    const map = new Map();
+    for (const a of combined) {
+      const key = (a.email || a._id).toString();
+      if (!map.has(key)) map.set(key, a);
+    }
+    const uniqueAdmins = Array.from(map.values());
+    if (!uniqueAdmins.length) return;
+
+    const idLabel = report.reportId ? ` (ID: ${report.reportId})` : "";
+    const dateLabel = formatReportDate(report.createdAt);
+    const message = `New report "${report.title}"${idLabel} issued ${dateLabel} requires your attention.`;
+
+    // Create notifications for each admin
+    await Notification.insertMany(
+      uniqueAdmins.map((a) => ({
+        user: a._id,
+        message,
+        type: "admin_new_report",
+        report: report._id,
+      }))
+    );
+
+    // Send emails to admins (best-effort)
+    await Promise.all(
+      uniqueAdmins.map((a) =>
+        sendReportNotification({ to: a.email, report }).catch((err) =>
+          console.error("[mailer] Failed to email admin", a.email, err?.message || err)
+        )
+      )
+    );
+  } catch (err) {
+    console.error("[notifyAdmins] error:", err?.message || err);
   }
 }

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { crewApi } from "../api/client.js";
-import { crewStatusLabel } from "../config/crewStatus.js";
+import { crewStatusLabelForReport } from "../config/crewStatus.js";
 
 export default function CrewTaskReportsTable({
   reports,
@@ -229,7 +229,7 @@ export default function CrewTaskReportsTable({
                   </td>
                 )}
                 <td className="px-4 py-3 font-semibold">
-                  {crewStatusLabel(report.crewStatus)}
+                  {crewStatusLabelForReport(report)}
                 </td>
               </tr>
             ))}

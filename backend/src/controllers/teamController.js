@@ -275,7 +275,10 @@ export async function assignReportToTeam(req, res) {
 
 export async function listPendingApprovals(req, res) {
   try {
-    const reports = await Report.find({ crewStatus: "awaiting_approval" })
+    const reports = await Report.find({
+      crewStatus: "awaiting_approval",
+      status: { $ne: "resolved" }
+    })
       .populate("reportedBy", "name email phone residentId")
       .sort({ updatedAt: -1 });
 
@@ -324,8 +327,18 @@ export async function approveReport(req, res) {
     await report.save();
     await report.populate("reportedBy", "name email phone residentId");
 
+    console.log("[approveReport] Report populated:", {
+      reportId: report.reportId,
+      reportedBy: report.reportedBy,
+      email: report.reportedBy?.email,
+      approval,
+    });
+
     if (approval === "approved") {
-      notifyReportApproved(report).catch(console.error);
+      console.log("[approveReport] Calling notifyReportApproved for:", report.title);
+      notifyReportApproved(report).catch((err) => {
+        console.error("[approveReport] notifyReportApproved error:", err);
+      });
     }
 
     res.json({ report });

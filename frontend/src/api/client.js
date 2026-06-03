@@ -83,3 +83,15 @@ export const chatApi = {
   send: (formData) => api.post("/api/chat", formData),
   like: (id) => api.post(`/api/chat/${id}/like`),
 };
+
+export const leadershipChatApi = {
+  list: () => api.get("/api/leadership-chat"),
+  send: (formData) => api.post("/api/leadership-chat", formData),
+  like: (id) => api.post(`/api/leadership-chat/${id}/like`),
+};
+
+export const teamChatApi = {
+  list: () => api.get("/api/team-chat"),
+  send: (formData) => api.post("/api/team-chat", formData),
+  like: (id) => api.post(`/api/team-chat/${id}/like`),
+};

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
-import { reportsApi } from "../api/client.js";
+import { reportsApi, leadershipChatApi } from "../api/client.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import AdminReportsTable from "../components/AdminReportsTable.jsx";
 import AdminSidebar from "../components/AdminSidebar.jsx";
@@ -10,6 +10,7 @@ import AdminTeamsTable from "../components/AdminTeamsTable.jsx";
 import AdminPendingApprovalsTable from "../components/AdminPendingApprovalsTable.jsx";
 import WelcomeHeader from "../components/WelcomeHeader.jsx";
 import StatisticsPanel from "../components/statistics/StatisticsPanel.jsx";
+import CrewChatPanel from "../components/CrewChatPanel.jsx";
 import AdminTableFilters, { ADMIN_STATUS_LABELS } from "../components/AdminTableFilters.jsx";
 import { inferReportArea } from "../config/dhakaAreas.js";
 
@@ -120,6 +121,7 @@ export default function AdminDashboardPage() {
   const showTeams = activeView === "teams";
   const showPending = activeView === "pending";
   const showStatistics = activeView === "statistics";
+  const showLeadershipChat = activeView === "leadership-chat";
   const mapHeight = activeView === "map" ? "70vh" : "45vh";
 
   const handleViewChange = (view) => {
@@ -207,6 +209,15 @@ export default function AdminDashboardPage() {
         {showStatistics && (
           <section className="card p-6">
             <StatisticsPanel title="City Statistics" />
+          </section>
+        )}
+
+        {showLeadershipChat && (
+          <section>
+            <h2 className="mb-4 text-lg font-semibold text-black">
+              Chat with Admins and Leaders
+            </h2>
+            <CrewChatPanel api={leadershipChatApi} />
           </section>
         )}
       </div>

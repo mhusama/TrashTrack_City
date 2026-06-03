@@ -26,6 +26,11 @@ export const STATUS_TABLE_STYLES = {
     rowBg: "#c2f2ff",
     textClass: "font-bold text-blue-600",
   },
+  awaiting_approval: {
+    label: "UNDER REVIEW",
+    rowBg: "#fed7aa",
+    textClass: "font-bold text-orange-600",
+  },
 };
 
 export const STATUS_SORT_ORDER = {
@@ -40,6 +45,7 @@ export const MAP_MARKER_COLORS = {
   in_progress: "#ca8a04",
   resolved: "#16a34a",
   rejected: "#2563eb",
+  awaiting_approval: "#ea580c",
 };
 
 export function sortReportsByResidentThenDate(reports) {

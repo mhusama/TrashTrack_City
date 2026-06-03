@@ -4,6 +4,8 @@ import { sendReportNotification } from "../utils/mailer.js";
 import {
   notifyResidentsAboutNewReport,
   notifyStatusChange,
+  notifyAdminsAboutNewReport,
+  notifyReportApproved,
 } from "../utils/notifications.js";
 import { isWithinDhakaBounds } from "../utils/dhakaBounds.js";
 import { inferAreaFromText } from "../utils/dhakaAreas.js";
@@ -241,7 +243,14 @@ export async function updateReportStatus(req, res) {
     await report.save();
     await report.populate("reportedBy", "name email phone residentId");
 
-    notifyStatusChange(report).catch(console.error);
+    // Notify based on status change
+    if (status === "resolved") {
+      // When status changes to resolved (approved), notify both resident and crew
+      notifyReportApproved(report).catch(console.error);
+    } else {
+      // For other status changes, send general status change notification
+      notifyStatusChange(report).catch(console.error);
+    }
 
     const out = report.toObject();
     const hasAssignment =

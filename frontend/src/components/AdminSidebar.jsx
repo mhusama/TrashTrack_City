@@ -6,6 +6,7 @@ const ADMIN_NAV_ITEMS = [
   { id: "map", label: "Centralized Map View" },
   { id: "teams", label: "Teams" },
   { id: "pending", label: "Pending Approvals" },
+  { id: "leadership-chat", label: "Chat with Admins and Leaders" },
 ];
 
 const STATISTICS_ITEM = { id: "statistics", label: "Statistics" };

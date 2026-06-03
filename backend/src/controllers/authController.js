@@ -326,7 +326,7 @@ export async function forgotPassword(req, res) {
       user.resetPasswordExpires = new Date(Date.now() + RESET_PASSWORD_EXPIRY_MS);
       await user.save();
 
-      const clientUrl = (process.env.CLIENT_URL || "http://localhost:5173").trim().replace(/\/$/, "");
+      const clientUrl = (process.env.CLIENT_URL || "http://localhost:5174").trim().replace(/\/$/, "");
       const resetUrl = `${clientUrl}/reset-password?token=${encodeURIComponent(rawToken)}`;
 
       const result = await sendPasswordResetEmail({ to: user.email, resetUrl });

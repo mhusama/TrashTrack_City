@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { crewApi } from "../api/client.js";
+import { crewApi, leadershipChatApi, teamChatApi } from "../api/client.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import CrewSidebar from "../components/CrewSidebar.jsx";
 import CrewStatusMap from "../components/CrewStatusMap.jsx";
@@ -40,7 +40,7 @@ export default function TeamLeaderDashboardPage() {
   }, []);
 
   const activeCount = reports.filter(
-    (r) => r.crewStatus !== "approved"
+    (r) => r.crewStatus === "assigned" || r.crewStatus === "disposal_in_progress"
   ).length;
 
   return (
@@ -49,6 +49,7 @@ export default function TeamLeaderDashboardPage() {
         activeView={activeView}
         onViewChange={setActiveView}
         teamLabel="Your Team"
+        showLeadershipChat
       />
       <div className="admin-dashboard-main space-y-6">
         {activeView === "dashboard" && (
@@ -102,10 +103,25 @@ export default function TeamLeaderDashboardPage() {
             )}
           </section>
         )}
+        {activeView === "team-chat" && (
+          <section>
+            <h2 className="mb-4 text-lg font-semibold">Chat with your team</h2>
+            <p className="mb-4 text-sm text-black/70">
+              Private chat for {user?.teamDisplayLabel || user?.teamName} only.
+            </p>
+            <CrewChatPanel api={teamChatApi} />
+          </section>
+        )}
         {activeView === "chat" && (
           <section>
-            <h2 className="mb-4 text-lg font-semibold">Chat with the Teams</h2>
+            <h2 className="mb-4 text-lg font-semibold">Chat with all teams</h2>
             <CrewChatPanel />
+          </section>
+        )}
+        {activeView === "leadership-chat" && (
+          <section>
+            <h2 className="mb-4 text-lg font-semibold">Chat with Admins and Leaders</h2>
+            <CrewChatPanel api={leadershipChatApi} />
           </section>
         )}
         {activeView === "statistics" && (

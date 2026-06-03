@@ -11,7 +11,17 @@ const notificationSchema = new mongoose.Schema(
     message: { type: String, required: true, trim: true },
     type: {
       type: String,
-      enum: ["status_change", "nearby_report", "same_location"],
+      enum: [
+        "status_change",
+        "nearby_report",
+        "same_location",
+        "team_assigned",
+        "report_approved",
+        "crew_update",
+        "admin_new_report",
+        "admin_review_needed",
+        "resident_task_completed",
+      ],
       required: true,
     },
     report: {

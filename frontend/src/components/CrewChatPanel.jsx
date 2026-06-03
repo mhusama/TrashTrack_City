@@ -4,7 +4,7 @@ import toast from "react-hot-toast";
 import { chatApi } from "../api/client.js";
 import { mediaUrl } from "../utils/mediaUrl.js";
 
-export default function CrewChatPanel() {
+export default function CrewChatPanel({ api = chatApi }) {
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
   const [image, setImage] = useState(null);
@@ -20,7 +20,7 @@ export default function CrewChatPanel() {
   const recordedChunksRef = useRef([]);
 
   const load = () => {
-    chatApi
+    api
       .list()
       .then((res) => setMessages(res.data.messages))
       .catch(() => toast.error("Could not load chat"));
@@ -30,7 +30,7 @@ export default function CrewChatPanel() {
     load();
     const timer = setInterval(load, 5000);
     return () => clearInterval(timer);
-  }, []);
+  }, [api]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -141,7 +141,7 @@ export default function CrewChatPanel() {
       if (image) fd.append("image", image);
       if (voice) fd.append("voice", voice);
       if (replyTarget?.id) fd.append("replyToMessageId", replyTarget.id);
-      await chatApi.send(fd);
+      await api.send(fd);
       setText("");
       setImage(null);
       setVoice(null);
@@ -156,7 +156,7 @@ export default function CrewChatPanel() {
 
   const toggleLike = async (id) => {
     try {
-      const res = await chatApi.like(id);
+      const res = await api.like(id);
       setMessages((prev) =>
         prev.map((m) => (m._id === id || m.id === id ? res.data.message : m))
       );

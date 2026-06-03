@@ -4,7 +4,7 @@ import { MapContainer, Marker } from "react-leaflet";
 import toast from "react-hot-toast";
 import { crewApi } from "../api/client.js";
 import { DHAKA_BOUNDS, DHAKA_ZOOM } from "../config/dhakaMap.js";
-import { crewStatusLabel, crewMapMarkerColor } from "../config/crewStatus.js";
+import { crewStatusLabelForReport, crewMapMarkerColor } from "../config/crewStatus.js";
 import { statusTriangleIcon } from "../lib/leafletIcons.js";
 import MapTileLayer from "../components/MapTileLayer.jsx";
 import { mediaUrl } from "../utils/mediaUrl.js";
@@ -38,7 +38,7 @@ export default function TeamMemberReportDetailPage() {
           <p className="font-mono text-sm text-[#6b0f1a]">Report ID: {report.reportId}</p>
         )}
         <p className="mt-2">
-          Status: <strong>{crewStatusLabel(report.crewStatus)}</strong>
+          Status: <strong>{crewStatusLabelForReport(report)}</strong>
         </p>
         <p className="mt-2">{report.description}</p>
         {report.photoUrl && (

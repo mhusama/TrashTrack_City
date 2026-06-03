@@ -43,3 +43,20 @@ export function requireCrew(req, res, next) {
   }
   next();
 }
+
+export function requireAdminOrTeamLeader(req, res, next) {
+  if (req.user?.role === "admin") {
+    return next();
+  }
+  if (req.user?.role === "cleaning_crew" && req.user?.crewSubRole === "team_leader") {
+    return next();
+  }
+  return res.status(403).json({ message: "Admin or team leader access required" });
+}
+
+export function requireTeamAssignment(req, res, next) {
+  if (!req.user?.teamName?.trim()) {
+    return res.status(403).json({ message: "Team assignment required" });
+  }
+  next();
+}

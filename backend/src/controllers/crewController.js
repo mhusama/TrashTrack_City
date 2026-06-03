@@ -2,6 +2,7 @@ import { Report } from "../models/Report.js";
 import { Vehicle } from "../models/Vehicle.js";
 import { getUserModel } from "../models/User.js";
 import { resolveTeamDisplayName } from "../services/teamRegistryService.js";
+import { notifyAdminsAboutReview } from "../utils/notifications.js";
 
 /** Vehicle is reserved while a report holds it during active crew work (before admin approval). */
 const TRANSPORT_HOLD_STATUSES = ["assigned", "disposal_in_progress"];
@@ -159,6 +160,8 @@ export async function submitUpdatedTaskReport(req, res) {
     report.approvalRemark = "not_approved";
     await report.save();
     await report.populate("reportedBy", "name email phone residentId");
+
+    notifyAdminsAboutReview(report).catch(console.error);
 
     res.json({ report });
   } catch (err) {

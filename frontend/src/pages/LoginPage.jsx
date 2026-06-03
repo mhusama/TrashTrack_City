@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
@@ -46,7 +46,6 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [forgotLoading, setForgotLoading] = useState(false);
 
   const datalistId = "ttc-login-email-suggestions";
 
@@ -65,45 +64,6 @@ export default function LoginPage() {
       : role === "cleaning_crew"
         ? "Cleaning crew sign in"
         : "Resident sign in";
-
-  const handleForgotPassword = async () => {
-    const trimmed = email.trim();
-    if (!trimmed) {
-      toast.error("Enter your email address first");
-      return;
-    }
-
-    setForgotLoading(true);
-    try {
-      const res = await authApi.forgotPassword({ email: trimmed });
-
-      if (res.data.emailSent === false && res.data.devResetUrl) {
-        console.info("[dev] Password reset link:", res.data.devResetUrl);
-        toast.error(
-          (res.data.smtpError || "SMTP not configured") +
-            " — open the browser console (F12) for your reset link.",
-          { duration: 8000 }
-        );
-        window.open(res.data.devResetUrl, "_blank", "noopener,noreferrer");
-        return;
-      }
-
-      if (res.data.emailSent === false) {
-        toast.error(res.data.message || "Could not send reset email. Check SMTP settings.");
-        return;
-      }
-
-      toast.success(res.data.message);
-    } catch (err) {
-      const data = err.response?.data;
-      if (data?.devResetUrl) {
-        window.open(data.devResetUrl, "_blank", "noopener,noreferrer");
-      }
-      toast.error(data?.message || "Could not send reset link");
-    } finally {
-      setForgotLoading(false);
-    }
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -203,11 +163,11 @@ export default function LoginPage() {
         <div className="flex justify-end">
           <button
             type="button"
-            onClick={handleForgotPassword}
-            disabled={forgotLoading || loading}
+            onClick={() => navigate("/forgot-password")}
+            disabled={loading}
             className="text-sm font-medium text-[#6b0f1a] underline-offset-2 transition-colors hover:underline disabled:opacity-60"
           >
-            {forgotLoading ? "Sending reset link…" : "Forgot password?"}
+            Forgot password?
           </button>
         </div>
         <button type="submit" disabled={loading} className="btn-primary w-full py-3">
