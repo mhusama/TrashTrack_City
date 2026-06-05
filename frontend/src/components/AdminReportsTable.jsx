@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { inferReportArea } from "../config/dhakaAreas.js";
 import { STATUS_TABLE_STYLES } from "../config/reportStatus.js";
 
 export default function AdminReportsTable({ reports }) {
@@ -10,6 +11,7 @@ export default function AdminReportsTable({ reports }) {
             <th className="px-4 py-3 font-semibold text-black">Resident ID</th>
             <th className="px-4 py-3 font-semibold text-black">Report ID</th>
             <th className="px-4 py-3 font-semibold text-black">Report</th>
+            <th className="px-4 py-3 font-semibold text-black">Report Location</th>
             <th className="px-4 py-3 font-semibold text-black">Issued Date</th>
             <th className="px-4 py-3 font-semibold text-black">Assigned To</th>
             <th className="px-4 py-3 font-semibold text-black">Status</th>
@@ -26,6 +28,7 @@ export default function AdminReportsTable({ reports }) {
               report.status !== "rejected"
                 ? report.assignedTeam
                 : "");
+            const reportLocation = inferReportArea(report);
             return (
               <tr
                 key={report._id}
@@ -42,6 +45,7 @@ export default function AdminReportsTable({ reports }) {
                     {report.title}
                   </Link>
                 </td>
+                <td className="px-4 py-3 text-black">{reportLocation}</td>
                 <td className="px-4 py-3 text-black">
                   {new Date(report.createdAt).toLocaleDateString("en-GB", {
                     day: "numeric",

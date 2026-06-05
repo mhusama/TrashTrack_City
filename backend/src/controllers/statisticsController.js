@@ -1,5 +1,10 @@
 import { Report } from "../models/Report.js";
-import { computeReportSeverity, severityLabel, SEVERITY_WEIGHT } from "../utils/heatmapSeverity.js";
+import {
+  computeHeatIntensity,
+  computeReportSeverity,
+  severityLabel,
+  SEVERITY_WEIGHT,
+} from "../utils/heatmapSeverity.js";
 import {
   dominantWasteLabel,
   normalizeWasteTypeId,
@@ -120,7 +125,6 @@ export async function getHeatmapStatistics(req, res) {
       }
     }
 
-    const maxCount = Math.max(1, ...Object.values(areaCounts), 1);
     const grid = new Map();
 
     for (const r of filtered) {
@@ -157,14 +161,15 @@ export async function getHeatmapStatistics(req, res) {
 
     const hotspots = [];
     const heatPoints = [];
+    const maxCellCount = Math.max(1, ...[...grid.values()].map((cell) => cell.count));
 
     for (const cell of grid.values()) {
-      const intensity = Math.min(1, cell.count / Math.max(3, maxCount * 0.15));
+      const intensity = computeHeatIntensity(cell, maxCellCount);
       const dominantCategory = Object.entries(cell.categories).sort((a, b) => b[1] - a[1])[0]?.[0];
       const dominantSeverity = Object.entries(cell.severities).sort((a, b) => b[1] - a[1])[0]?.[0];
       const dominantArea = Object.entries(cell.areas).sort((a, b) => b[1] - a[1])[0]?.[0];
 
-      heatPoints.push([cell.lat, cell.lng, Math.max(0.15, intensity * (cell.weightSum / cell.count))]);
+      heatPoints.push([cell.lat, cell.lng, intensity]);
 
       hotspots.push({
         lat: cell.lat,

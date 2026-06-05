@@ -1,5 +1,7 @@
 export const TEAM_NAMES = Array.from({ length: 15 }, (_, i) => `Team ${i + 1}`);
 
+export const EXCLUDED_TEAM_KEYS = ["Team Usama"];
+
 export const TEAM_BRAND_NAMES = {
   "Team 1": "Team Agnibina",
   "Team 2": "Team Durbar",

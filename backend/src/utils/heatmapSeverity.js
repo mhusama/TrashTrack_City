@@ -41,3 +41,19 @@ export function severityLabel(severity) {
   };
   return labels[severity] || severity;
 }
+
+/**
+ * Heatmap color intensity: blends average severity with relative complaint density.
+ * Steeper density curve keeps quiet zones green while the busiest zone still reads orange.
+ */
+export function computeHeatIntensity({ count, weightSum }, maxCellCount) {
+  const safeCount = Math.max(1, count);
+  const maxCount = Math.max(1, maxCellCount);
+  const avgSeverity = weightSum / safeCount;
+
+  const densityRatio = safeCount / maxCount;
+  const densityScore = Math.pow(densityRatio, 0.65);
+
+  const blended = 0.35 * avgSeverity + 0.65 * densityScore;
+  return Math.max(0.2, Math.min(1, blended));
+}

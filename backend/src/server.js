@@ -6,6 +6,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { connectDB } from "./config/db.js";
 import { initUserModels } from "./models/User.js";
+import { purgeExcludedTeamsFromRegistry } from "./services/teamRegistryService.js";
 import "./models/TeamRegistry.js";
 import "./models/Vehicle.js";
 import { logSmtpStatus } from "./utils/mailer.js";
@@ -110,6 +111,7 @@ app.use((err, _req, res, _next) => {
 async function start() {
   await connectDB();
   initUserModels();
+  await purgeExcludedTeamsFromRegistry();
   logSmtpStatus();
   app.listen(PORT, HOST, () => {
     console.log(`Server running on http://localhost:${PORT}`);

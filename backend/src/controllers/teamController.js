@@ -9,6 +9,13 @@ import {
   resolveTeamDisplayName,
 } from "../services/teamRegistryService.js";
 import {
+  CREW_USER_SAFE_FIELDS,
+  findCrewUsersOnTeam,
+  findTeamLeaderRecord,
+  normalizeTeamKey,
+} from "../services/crewTeamUserService.js";
+import { isTeamLeader } from "../utils/crewTeamMatch.js";
+import {
   notifyReportApproved,
   notifyReportAssigned,
   notifyStatusChange,
@@ -59,41 +66,44 @@ async function countApprovedReports(teamName) {
   });
 }
 
-async function getTeamLeaderRecord(teamName) {
-  const CrewUser = getUserModel("cleaning_crew");
-  return CrewUser.findOne({
-    role: "cleaning_crew",
-    crewSubRole: "team_leader",
-    teamName,
-  }).select("name _id teamId");
-}
-
 async function getTeamLeaderName(teamName) {
-  const leader = await getTeamLeaderRecord(teamName);
+  const leader = await findTeamLeaderRecord(teamName);
   return leader?.name || "—";
-}
-
-function crewUserCredentialsSelect() {
-  return "name email phone profilePicture teamName crewSubRole role nidNumber nidFrontImage nidBackImage teamId createdAt";
 }
 
 function formatCrewUser(user) {
   if (!user) return null;
+  const doc = typeof user.toObject === "function" ? user.toObject() : user;
   return {
-    id: user._id,
-    name: user.name,
-    email: user.email,
-    phone: user.phone || "",
-    role: user.role,
-    crewSubRole: user.crewSubRole || "",
-    teamName: user.teamName || "",
-    teamId: user.teamId || "",
-    profilePicture: user.profilePicture || "",
-    nidNumber: user.nidNumber || "",
-    nidFrontImage: user.nidFrontImage || "",
-    nidBackImage: user.nidBackImage || "",
-    createdAt: user.createdAt,
+    id: doc._id?.toString?.() || String(doc._id),
+    name: doc.name,
+    email: doc.email,
+    phone: doc.phone || "",
+    role: doc.role,
+    crewSubRole: doc.crewSubRole || "",
+    teamName: doc.teamName || "",
+    teamId: doc.teamId || "",
+    profilePicture: doc.profilePicture || "",
+    nidNumber: doc.nidNumber || "",
+    nidFrontImage: doc.nidFrontImage || "",
+    nidBackImage: doc.nidBackImage || "",
+    rating: doc.rating ?? 0,
+    reviewedBy: doc.reviewedBy ?? 0,
+    blocked: Boolean(doc.blocked),
+    createdAt: doc.createdAt,
+    updatedAt: doc.updatedAt,
   };
+}
+
+async function formatCrewUserWithTeamLabel(user) {
+  const formatted = formatCrewUser(user);
+  if (!formatted) return null;
+  if (formatted.teamName) {
+    formatted.teamDisplayLabel = await resolveTeamDisplayName(formatted.teamName);
+  } else {
+    formatted.teamDisplayLabel = "";
+  }
+  return formatted;
 }
 
 async function countTeamReports(teamName, crewStatusFilter, excludeReportId = null) {
@@ -148,7 +158,7 @@ export async function getTeamsOverview(req, res) {
     const keys = await getAllTeamKeysOrdered();
     const teams = await Promise.all(
       keys.map(async (teamName) => {
-        const leader = await getTeamLeaderRecord(teamName);
+        const leader = await findTeamLeaderRecord(teamName);
         const [assignedTasks, disposalInProgress, pendingApproval, approvedReports, teamDisplayLabel] =
           await Promise.all([
             countActiveTeamAssignments(teamName),
@@ -164,7 +174,7 @@ export async function getTeamsOverview(req, res) {
           teamName,
           teamDisplayLabel,
           teamLeader: leader?.name || "—",
-          teamLeaderId: leader?._id?.toString() || null,
+          teamLeaderId: leader?._id?.toString?.() || (leader?._id ? String(leader._id) : null),
           leaderTeamId: leader?.teamId || "",
           assignedTasks,
           disposalInProgress,
@@ -184,28 +194,22 @@ export async function getTeamsOverview(req, res) {
 
 export async function getTeamMembers(req, res) {
   try {
-    const { teamName } = req.params;
-    if (!(await isValidTeamName(teamName))) {
+    const teamKey = normalizeTeamKey(req.params.teamName);
+    if (!(await isValidTeamName(teamKey))) {
       return res.status(400).json({ message: "Invalid team name" });
     }
 
-    const CrewUser = getUserModel("cleaning_crew");
-    const [leader, members] = await Promise.all([
-      CrewUser.findOne({
-        role: "cleaning_crew",
-        crewSubRole: "team_leader",
-        teamName,
-      }).select(crewUserCredentialsSelect()),
-      CrewUser.find({
-        role: "cleaning_crew",
-        crewSubRole: "team_member",
-        teamName,
-      }).select(crewUserCredentialsSelect()),
-    ]);
+    const crewOnTeam = await findCrewUsersOnTeam(teamKey);
+    const leader = crewOnTeam.find(isTeamLeader) || (await findTeamLeaderRecord(teamKey));
+    const leaderId = leader?._id ? String(leader._id) : null;
+    const members = leaderId
+      ? crewOnTeam.filter((user) => String(user._id) !== leaderId)
+      : crewOnTeam;
 
     res.json({
-      leader: formatCrewUser(leader),
-      members: members.map(formatCrewUser),
+      teamName: teamKey,
+      leader: await formatCrewUserWithTeamLabel(leader),
+      members: await Promise.all(members.map((m) => formatCrewUserWithTeamLabel(m))),
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -215,11 +219,11 @@ export async function getTeamMembers(req, res) {
 export async function getCrewUserCredentials(req, res) {
   try {
     const CrewUser = getUserModel("cleaning_crew");
-    const user = await CrewUser.findById(req.params.userId).select(crewUserCredentialsSelect());
+    const user = await CrewUser.findById(req.params.userId).select(CREW_USER_SAFE_FIELDS);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    res.json({ user: formatCrewUser(user) });
+    res.json({ user: await formatCrewUserWithTeamLabel(user) });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
