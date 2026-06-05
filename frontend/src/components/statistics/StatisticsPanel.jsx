@@ -11,7 +11,7 @@ export default function StatisticsPanel({ title = "Statistics" }) {
       <div>
         <h2 className="text-xl font-bold text-black">{title}</h2>
         <p className="mt-1 text-sm text-neutral-700">
-          Smart heatmap visualization of complaint density across Dhaka — filter by waste type,
+          Smart heatmap visualization of complaint density across Dhaka — filter by report category,
           time, and severity.
         </p>
       </div>

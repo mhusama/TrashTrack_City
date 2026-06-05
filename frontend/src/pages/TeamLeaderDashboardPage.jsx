@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import toast from "react-hot-toast";
 import { crewApi, leadershipChatApi, teamChatApi } from "../api/client.js";
 import { useAuth } from "../context/AuthContext.jsx";
@@ -10,10 +11,14 @@ import CrewChatPanel from "../components/CrewChatPanel.jsx";
 import WelcomeHeader from "../components/WelcomeHeader.jsx";
 import StatisticsPanel from "../components/statistics/StatisticsPanel.jsx";
 import CommunityFeedPanel from "../components/CommunityFeedPanel.jsx";
+import useIsMobile from "../hooks/useIsMobile.js";
+import useDashboardView from "../hooks/useDashboardView.js";
 
 export default function TeamLeaderDashboardPage() {
   const { user } = useAuth();
-  const [activeView, setActiveView] = useState("dashboard");
+  const location = useLocation();
+  const isMobile = useIsMobile();
+  const [activeView, setActiveView] = useState(() => location.state?.view || "dashboard");
   const [reports, setReports] = useState([]);
   const [teamData, setTeamData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -44,14 +49,30 @@ export default function TeamLeaderDashboardPage() {
     (r) => r.status !== "resolved" && r.status !== "rejected"
   ).length;
 
+  const handleViewChange = useCallback((view) => {
+    setActiveView(view);
+  }, []);
+
+  useDashboardView({
+    activeView,
+    setActiveView,
+    onViewChange: handleViewChange,
+  });
+
   return (
-    <div className="admin-dashboard-layout text-black">
-      <CrewSidebar
-        activeView={activeView}
-        onViewChange={setActiveView}
-        teamLabel="Your Team"
-        showLeadershipChat
-      />
+    <div
+      className={`admin-dashboard-layout text-black ${
+        isMobile ? "admin-dashboard-layout--mobile" : ""
+      }`}
+    >
+      {!isMobile && (
+        <CrewSidebar
+          activeView={activeView}
+          onViewChange={handleViewChange}
+          teamLabel="Your Team"
+          showLeadershipChat
+        />
+      )}
       <div className="admin-dashboard-main space-y-6">
         {activeView === "dashboard" && (
           <>
@@ -64,13 +85,15 @@ export default function TeamLeaderDashboardPage() {
                 </>
               }
             />
-            <button
-              type="button"
-              onClick={() => setActiveView("tasks")}
-              className="guest-cta-btn px-6 py-3"
-            >
-              Task Reports
-            </button>
+            {!isMobile && (
+              <button
+                type="button"
+                onClick={() => handleViewChange("tasks")}
+                className="guest-cta-btn px-6 py-3"
+              >
+                Task Reports
+              </button>
+            )}
           </>
         )}
         {activeView === "team" && (
@@ -85,7 +108,11 @@ export default function TeamLeaderDashboardPage() {
             {loading ? (
               <p>Loading map…</p>
             ) : (
-              <CrewStatusMap reports={reports} height="70vh" className="admin-status-map" />
+              <CrewStatusMap
+                reports={reports}
+                height={isMobile ? "55vh" : "70vh"}
+                className="admin-status-map"
+              />
             )}
           </section>
         )}

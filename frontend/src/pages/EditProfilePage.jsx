@@ -7,6 +7,7 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { homePathForRole } from "../config/roles.js";
 import { mediaUrl } from "../utils/mediaUrl.js";
 import PasswordInput from "../components/PasswordInput.jsx";
+import AuthFormSpacer from "../components/AuthFormSpacer.jsx";
 
 export default function EditProfilePage() {
   const { user, setUser } = useAuth();
@@ -71,7 +72,7 @@ export default function EditProfilePage() {
   if (!user) return null;
 
   return (
-    <div className="mx-auto max-w-lg space-y-6 text-black">
+    <div className="auth-card mx-auto max-w-lg space-y-6 text-black">
       <Link
         to={homePathForRole(user.role, user.crewSubRole)}
         className="text-sm font-medium text-[#6b0f1a] hover:underline"
@@ -184,6 +185,7 @@ export default function EditProfilePage() {
           {loading ? "Saving…" : "Save changes"}
         </button>
       </form>
+      <AuthFormSpacer />
     </div>
   );
 }

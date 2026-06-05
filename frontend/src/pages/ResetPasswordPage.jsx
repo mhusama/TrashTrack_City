@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 import { authApi } from "../api/client.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import PasswordInput from "../components/PasswordInput.jsx";
+import AuthFormSpacer from "../components/AuthFormSpacer.jsx";
 
 function readTokenFromUrl(searchParams) {
   const raw = searchParams.get("token");
@@ -61,7 +62,7 @@ export default function ResetPasswordPage() {
       <motion.div
         initial={{ opacity: 0, scale: 0.98 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="card mx-auto max-w-md p-8 text-center"
+        className="auth-card card mx-auto max-w-md p-8 text-center"
       >
         <h1 className="text-2xl font-bold text-black">Missing reset link</h1>
         <p className="mt-3 text-sm text-black">
@@ -78,7 +79,7 @@ export default function ResetPasswordPage() {
     <motion.div
       initial={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="card mx-auto max-w-md p-8"
+      className="auth-card card mx-auto max-w-md p-8"
     >
       <h1 className="text-2xl font-bold text-black">Set new password</h1>
       <p className="mt-1 text-sm text-black">
@@ -124,6 +125,7 @@ export default function ResetPasswordPage() {
           Back to sign in
         </Link>
       </p>
+      <AuthFormSpacer />
     </motion.div>
   );
 }

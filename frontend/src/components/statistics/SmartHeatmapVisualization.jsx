@@ -80,9 +80,9 @@ function HeatmapFilterPanel({ wasteType, setWasteType, timeRange, setTimeRange, 
       </p>
 
       <div className="mb-4 space-y-2">
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-cyan-300/80">
-          Waste type
-        </p>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-cyan-300/80">
+              Report category
+            </p>
         <div className="flex flex-wrap gap-1.5">
           {HEATMAP_WASTE_FILTERS.map((w) => (
             <FilterChip
@@ -200,7 +200,7 @@ export default function SmartHeatmapVisualization() {
             />
             <StatCard
               icon={Recycle}
-              label="Most common waste"
+              label="Most common category"
               value={summary?.mostCommonWasteType ?? "—"}
               accent="text-lime-400"
             />
@@ -260,7 +260,7 @@ export default function SmartHeatmapVisualization() {
               <li>
                 <strong>{tooltipHotspot.count}</strong> complaint{tooltipHotspot.count !== 1 ? "s" : ""}
               </li>
-              <li>Dominant: {tooltipHotspot.dominantWasteType}</li>
+              <li>Category: {tooltipHotspot.dominantWasteType}</li>
               <li className="flex items-center gap-1">
                 <AlertTriangle className="h-3.5 w-3.5 text-amber-400" />
                 {tooltipHotspot.severityLabel}
@@ -319,7 +319,7 @@ export default function SmartHeatmapVisualization() {
                     <p className="mt-1">
                       <strong>{h.count}</strong> complaints in this zone
                     </p>
-                    <p className="mt-1">Waste: {h.dominantWasteType}</p>
+                    <p className="mt-1">Category: {h.dominantWasteType}</p>
                     <p className="mt-1">Severity: {h.severityLabel}</p>
                     <p className="mt-1 text-xs text-neutral-600">
                       Last report:{" "}
@@ -336,7 +336,7 @@ export default function SmartHeatmapVisualization() {
 
         {!loading && heatPoints.length === 0 && (
           <p className="absolute inset-0 z-[800] flex items-center justify-center bg-slate-900/40 text-center text-sm text-white">
-            No complaints match these filters. Try a wider time range or different waste type.
+            No complaints match these filters. Try a wider time range or a different category.
           </p>
         )}
         </div>

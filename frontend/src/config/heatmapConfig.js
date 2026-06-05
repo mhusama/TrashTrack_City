@@ -1,14 +1,11 @@
+import { REPORT_CATEGORY_GROUPS } from "./reportCategories.js";
+
 export const HEATMAP_WASTE_FILTERS = [
-  { id: "all", label: "All Types" },
-  { id: "household", label: "Household Waste" },
-  { id: "plastic", label: "Plastic Waste" },
-  { id: "organic", label: "Organic Waste" },
-  { id: "e_waste", label: "E-Waste" },
-  { id: "hazardous", label: "Hazardous Waste" },
-  { id: "medical", label: "Medical Waste" },
-  { id: "construction", label: "Construction Waste" },
-  { id: "drainage", label: "Drainage Waste" },
-  { id: "street_litter", label: "Street Litter" },
+  { id: "all", label: "All categories" },
+  ...REPORT_CATEGORY_GROUPS.map((group) => ({
+    id: group.value,
+    label: group.label,
+  })),
 ];
 
 export const HEATMAP_TIME_FILTERS = [

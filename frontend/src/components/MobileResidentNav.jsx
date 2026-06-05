@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { useResidentNav } from "../context/ResidentNavContext.jsx";
+import { useDashboardNav } from "../context/DashboardNavContext.jsx";
 import {
   BarChart3,
   Bell,
@@ -47,7 +47,7 @@ function isItemActive(item, pathname, homeView) {
 
 export default function MobileResidentNav() {
   const location = useLocation();
-  const { homeView } = useResidentNav();
+  const { activeView: homeView } = useDashboardNav();
   const [moreOpen, setMoreOpen] = useState(false);
   const moreActive = MORE_ITEMS.some((item) => isItemActive(item, location.pathname, homeView));
 
@@ -56,14 +56,14 @@ export default function MobileResidentNav() {
       {moreOpen && (
         <button
           type="button"
-          className="mobile-resident-nav-backdrop"
+          className="mobile-bottom-nav-backdrop"
           aria-label="Close menu"
           onClick={() => setMoreOpen(false)}
         />
       )}
 
       {moreOpen && (
-        <div className="mobile-resident-more-sheet" role="dialog" aria-label="More options">
+        <div className="mobile-bottom-more-sheet" role="dialog" aria-label="More options">
           <div className="flex items-center justify-between border-b border-[#fce1ee] px-4 py-3">
             <p className="text-sm font-semibold text-[#6b0f1a]">More</p>
             <button
@@ -92,7 +92,7 @@ export default function MobileResidentNav() {
                     to={item.to}
                     state={item.state}
                     onClick={() => setMoreOpen(false)}
-                    className={`mobile-resident-more-link ${active ? "mobile-resident-more-link-active" : ""}`}
+                    className={`mobile-bottom-more-link ${active ? "mobile-bottom-more-link-active" : ""}`}
                   >
                     <Icon className="h-5 w-5 shrink-0" />
                     {item.label}
@@ -104,7 +104,7 @@ export default function MobileResidentNav() {
         </div>
       )}
 
-      <nav className="mobile-resident-nav" aria-label="Resident navigation">
+      <nav className="mobile-bottom-nav" aria-label="Resident navigation">
         {PRIMARY_ITEMS.map((item) => {
           const active = isItemActive(item, location.pathname, homeView);
           const Icon = item.icon;
@@ -113,7 +113,7 @@ export default function MobileResidentNav() {
               key={item.id}
               to={item.to}
               state={item.state}
-              className={`mobile-resident-nav-item ${active ? "mobile-resident-nav-item-active" : ""}`}
+              className={`mobile-bottom-nav-item ${active ? "mobile-bottom-nav-item-active" : ""}`}
             >
               <Icon className="h-5 w-5" strokeWidth={active ? 2.5 : 2} />
               <span>{item.label}</span>
@@ -123,7 +123,7 @@ export default function MobileResidentNav() {
         <button
           type="button"
           onClick={() => setMoreOpen((open) => !open)}
-          className={`mobile-resident-nav-item ${moreActive || moreOpen ? "mobile-resident-nav-item-active" : ""}`}
+          className={`mobile-bottom-nav-item ${moreActive || moreOpen ? "mobile-bottom-nav-item-active" : ""}`}
           aria-expanded={moreOpen}
           aria-haspopup="dialog"
         >

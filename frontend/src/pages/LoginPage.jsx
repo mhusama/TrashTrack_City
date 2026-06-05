@@ -7,7 +7,7 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { ROLES, homePathForRole } from "../config/roles.js";
 import { CREW_SUB_ROLES } from "../config/teams.js";
 import PasswordInput from "../components/PasswordInput.jsx";
-import useIsMobile from "../hooks/useIsMobile.js";
+import AuthFormSpacer from "../components/AuthFormSpacer.jsx";
 
 const STORAGE_KEY = "trashtrack_city_saved_emails_v1";
 
@@ -48,7 +48,6 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const isMobile = useIsMobile();
 
   const datalistId = "ttc-login-email-suggestions";
 
@@ -166,7 +165,6 @@ export default function LoginPage() {
               minLength={6}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              initialVisible={isMobile}
             />
           </label>
         </div>
@@ -192,6 +190,7 @@ export default function LoginPage() {
           Register
         </Link>
       </p>
+      <AuthFormSpacer />
     </motion.div>
   );
 }

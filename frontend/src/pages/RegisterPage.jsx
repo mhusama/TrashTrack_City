@@ -8,7 +8,7 @@ import { ROLES, homePathForRole } from "../config/roles.js";
 import { CREW_SUB_ROLES } from "../config/teams.js";
 import { authApi, teamsApi } from "../api/client.js";
 import PasswordInput from "../components/PasswordInput.jsx";
-import useIsMobile from "../hooks/useIsMobile.js";
+import AuthFormSpacer from "../components/AuthFormSpacer.jsx";
 
 export default function RegisterPage() {
   const { register } = useAuth();
@@ -30,7 +30,6 @@ export default function RegisterPage() {
   const [teamOptions, setTeamOptions] = useState([]);
   const [previewResidentId, setPreviewResidentId] = useState("");
   const [previewTeamId, setPreviewTeamId] = useState("");
-  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (!profilePicture) {
@@ -298,7 +297,6 @@ export default function RegisterPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoComplete="new-password"
-              initialVisible={isMobile}
             />
           </label>
         </div>
@@ -352,6 +350,7 @@ export default function RegisterPage() {
           Sign in
         </Link>
       </p>
+      <AuthFormSpacer />
     </motion.div>
   );
 }

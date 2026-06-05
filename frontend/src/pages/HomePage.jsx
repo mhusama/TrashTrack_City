@@ -18,7 +18,7 @@ import { canRateReport, hasReportFeedback } from "../utils/reportFeedback.js";
 import { canResidentModifyReport } from "../utils/reportActions.js";
 import ReportManageActions from "../components/ReportManageActions.jsx";
 import useIsMobile from "../hooks/useIsMobile.js";
-import { useResidentNav } from "../context/ResidentNavContext.jsx";
+import useDashboardView from "../hooks/useDashboardView.js";
 
 function MyReportsPanel({
   loading,
@@ -129,7 +129,6 @@ export default function HomePage() {
   const { user } = useAuth();
   const location = useLocation();
   const isMobile = useIsMobile();
-  const { setHomeView } = useResidentNav();
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeView, setActiveView] = useState(() => location.state?.view || "dashboard");
@@ -148,26 +147,25 @@ export default function HomePage() {
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => {
-    const nextView = location.state?.view;
-    if (nextView) {
-      setActiveView(nextView);
-      if (nextView === "reports" || location.state?.openReports) {
+  const handleViewChange = (view) => {
+    setActiveView(view);
+    if (view === "dashboard") {
+      setShowReportsPanel(false);
+    } else if (view === "reports") {
+      setShowReportsPanel(true);
+    }
+  };
+
+  useDashboardView({
+    activeView,
+    setActiveView,
+    onViewChange: handleViewChange,
+    extraStateHandlers: (view, state) => {
+      if (view === "reports" || state?.openReports) {
         setShowReportsPanel(true);
       }
-      window.history.replaceState({}, document.title);
-      return;
-    }
-    if (location.state?.openReports) {
-      setActiveView("reports");
-      setShowReportsPanel(true);
-      window.history.replaceState({}, document.title);
-    }
-  }, [location.state]);
-
-  useEffect(() => {
-    setHomeView(activeView);
-  }, [activeView, setHomeView]);
+    },
+  });
 
   useEffect(() => {
     loadReports();
@@ -200,15 +198,6 @@ export default function HomePage() {
   const showStatistics = activeView === "statistics";
   const showCommunityFeed = activeView === "community-feed";
   const showNewReport = activeView === "new-report";
-
-  const handleViewChange = (view) => {
-    setActiveView(view);
-    if (view === "dashboard") {
-      setShowReportsPanel(false);
-    } else if (view === "reports") {
-      setShowReportsPanel(true);
-    }
-  };
 
   const handleDeleteReport = async (report) => {
     if (

@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 import { reportsApi, leadershipChatApi, teamsApi } from "../api/client.js";
@@ -15,6 +16,8 @@ import CommunityFeedPanel from "../components/CommunityFeedPanel.jsx";
 import AdminResidentActivitiesTable from "../components/AdminResidentActivitiesTable.jsx";
 import AdminTableFilters, { ADMIN_STATUS_LABELS } from "../components/AdminTableFilters.jsx";
 import { inferReportArea } from "../config/dhakaAreas.js";
+import useIsMobile from "../hooks/useIsMobile.js";
+import useDashboardView from "../hooks/useDashboardView.js";
 
 function tableHeading(areaFilter, statusFilter) {
   if (areaFilter === "all" && statusFilter === "all") {
@@ -90,10 +93,14 @@ function MapSection({ loading, reports, mapHeight, fullHeight = false }) {
 
 export default function AdminDashboardPage() {
   const { user } = useAuth();
+  const location = useLocation();
+  const isMobile = useIsMobile();
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeView, setActiveView] = useState("dashboard");
-  const [showReportsPanel, setShowReportsPanel] = useState(false);
+  const [activeView, setActiveView] = useState(() => location.state?.view || "dashboard");
+  const [showReportsPanel, setShowReportsPanel] = useState(
+    () => Boolean(location.state?.openReports || location.state?.view === "reports")
+  );
   const [areaFilter, setAreaFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [sortOrder, setSortOrder] = useState("newest");
@@ -149,9 +156,9 @@ export default function AdminDashboardPage() {
   const showLeadershipChat = activeView === "leadership-chat";
   const showCommunityFeed = activeView === "community-feed";
   const showResidentActivities = activeView === "resident-activities";
-  const mapHeight = activeView === "map" ? "70vh" : "45vh";
+  const mapHeight = activeView === "map" ? (isMobile ? "55vh" : "70vh") : isMobile ? "40vh" : "45vh";
 
-  const handleViewChange = (view) => {
+  const handleViewChange = useCallback((view) => {
     setActiveView(view);
     if (view === "dashboard") {
       setShowReportsPanel(false);
@@ -160,15 +167,32 @@ export default function AdminDashboardPage() {
     } else {
       setShowReportsPanel(false);
     }
-  };
+  }, []);
+
+  useDashboardView({
+    activeView,
+    setActiveView,
+    onViewChange: handleViewChange,
+    extraStateHandlers: (view, state) => {
+      if (view === "reports" || state?.openReports) {
+        setShowReportsPanel(true);
+      }
+    },
+  });
 
   const openReportsPanel = () => {
     setShowReportsPanel(true);
   };
 
   return (
-    <div className="admin-dashboard-layout text-black">
-      <AdminSidebar activeView={activeView} onViewChange={handleViewChange} />
+    <div
+      className={`admin-dashboard-layout text-black ${
+        isMobile ? "admin-dashboard-layout--mobile" : ""
+      }`}
+    >
+      {!isMobile && (
+        <AdminSidebar activeView={activeView} onViewChange={handleViewChange} />
+      )}
 
       <div className="admin-dashboard-main space-y-6">
         {showOverview && (
@@ -189,7 +213,7 @@ export default function AdminDashboardPage() {
           </section>
         )}
 
-        {showOverview && !showReportsPanel && (
+        {showOverview && !showReportsPanel && !isMobile && (
           <div>
             <button
               type="button"

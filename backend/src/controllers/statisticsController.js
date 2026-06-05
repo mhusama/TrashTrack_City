@@ -2,6 +2,7 @@ import { Report } from "../models/Report.js";
 import { computeReportSeverity, severityLabel, SEVERITY_WEIGHT } from "../utils/heatmapSeverity.js";
 import {
   dominantWasteLabel,
+  normalizeWasteTypeId,
   reportMatchesWasteType,
 } from "../utils/heatmapWasteTypes.js";
 import { inferAreaFromText } from "../utils/dhakaAreas.js";
@@ -46,7 +47,7 @@ function formatAreaName(report) {
 
 export async function getHeatmapStatistics(req, res) {
   try {
-    const wasteType = String(req.query.wasteType || "all").trim();
+    const wasteType = normalizeWasteTypeId(String(req.query.wasteType || "all").trim());
     const timeRange = TIME_RANGES.includes(req.query.timeRange)
       ? req.query.timeRange
       : "all_time";

@@ -29,9 +29,6 @@ export default function MobileGuestPage() {
           animate={{ opacity: 1, y: 0 }}
           className="space-y-5 text-center"
         >
-          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl border-2 border-[#6b0f1a] bg-white shadow-sm">
-            <img src="/logo.png" alt="" className="h-14 w-14 object-contain" />
-          </div>
           <div className="space-y-2">
             <p className="inline-flex items-center gap-1.5 rounded-full border border-[#6b0f1a]/20 bg-[#fce1ee] px-3 py-1 text-xs font-semibold uppercase tracking-wide text-[#6b0f1a]">
               <Sparkles className="h-3.5 w-3.5" />
