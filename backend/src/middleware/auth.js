@@ -20,6 +20,13 @@ export async function requireAuth(req, res, next) {
   }
 
   req.user = user;
+
+  if (user.role === "resident" && user.blocked) {
+    return res.status(403).json({
+      message: "Your account has been blocked. Contact support for help.",
+    });
+  }
+
   next();
 }
 

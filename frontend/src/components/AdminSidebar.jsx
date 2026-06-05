@@ -5,7 +5,9 @@ const ADMIN_NAV_ITEMS = [
   { id: "reports", label: "View All Reports" },
   { id: "map", label: "Centralized Map View" },
   { id: "teams", label: "Teams" },
-  { id: "pending", label: "Pending Approvals" },
+  { id: "pending", label: "Updated Task Reports" },
+  { id: "community-feed", label: "Community Feed" },
+  { id: "resident-activities", label: "Resident Activities" },
   { id: "leadership-chat", label: "Chat with Admins and Leaders" },
 ];
 

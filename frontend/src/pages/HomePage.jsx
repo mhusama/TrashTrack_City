@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 import { reportsApi } from "../api/client.js";
@@ -11,8 +11,14 @@ import SortByDropdown from "../components/SortByDropdown.jsx";
 import WelcomeHeader from "../components/WelcomeHeader.jsx";
 import StatisticsPanel from "../components/statistics/StatisticsPanel.jsx";
 import NewReportPage from "./NewReportPage.jsx";
+import CommunityFeedPanel from "../components/CommunityFeedPanel.jsx";
 import { inferReportArea } from "../config/dhakaAreas.js";
 import { filterReports, getFilterLabel } from "../utils/reportFilters.js";
+import { canRateReport, hasReportFeedback } from "../utils/reportFeedback.js";
+import { canResidentModifyReport } from "../utils/reportActions.js";
+import ReportManageActions from "../components/ReportManageActions.jsx";
+import useIsMobile from "../hooks/useIsMobile.js";
+import { useResidentNav } from "../context/ResidentNavContext.jsx";
 
 function MyReportsPanel({
   loading,
@@ -22,6 +28,8 @@ function MyReportsPanel({
   onSortChange,
   listVariant,
   now,
+  onDeleteReport,
+  deletingId,
 }) {
   return (
     <motion.section
@@ -52,19 +60,43 @@ function MyReportsPanel({
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">
           {filteredReports.map((report) => (
-            <Link
-              key={report._id}
-              to={`/reports/${report._id}`}
-              className="block rounded-xl transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6b0f1a]"
-            >
-              <ReportCard
-                report={report}
-                areaName={inferReportArea(report)}
-                isAdmin={false}
-                variant={listVariant}
-                now={now}
-              />
-            </Link>
+            <div key={report._id} className="space-y-2">
+              <Link
+                to={`/reports/${report._id}`}
+                className="block rounded-xl transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6b0f1a]"
+              >
+                <ReportCard
+                  report={report}
+                  areaName={inferReportArea(report)}
+                  isAdmin={false}
+                  variant={listVariant}
+                  now={now}
+                />
+              </Link>
+              {canResidentModifyReport(report) && (
+                <ReportManageActions
+                  reportId={report._id}
+                  deleting={deletingId === report._id}
+                  onDelete={() => onDeleteReport(report)}
+                />
+              )}
+              {canRateReport(report) && (
+                <Link
+                  to={`/reports/${report._id}/rate`}
+                  className="guest-cta-btn block w-full py-2.5 text-center text-sm"
+                >
+                  Rate Service
+                </Link>
+              )}
+              {hasReportFeedback(report) && report.status === "resolved" && (
+                <Link
+                  to={`/reports/${report._id}/review`}
+                  className="block w-full rounded-lg border border-[#6b0f1a] py-2.5 text-center text-sm font-medium text-[#6b0f1a] transition-colors hover:bg-[#fce1ee]"
+                >
+                  My Review
+                </Link>
+              )}
+            </div>
           ))}
         </div>
       )}
@@ -72,7 +104,7 @@ function MyReportsPanel({
   );
 }
 
-function MapPanel({ loading, reports }) {
+function MapPanel({ loading, reports, isMobile }) {
   return (
     <section className="admin-dashboard-map-section admin-dashboard-map-section--solo dashboard-map-section relative z-0">
       <h2 className="mb-3 text-lg font-semibold text-black">My reports on map</h2>
@@ -83,7 +115,11 @@ function MapPanel({ loading, reports }) {
           No report locations yet. Submit a report to see markers on the map.
         </p>
       ) : (
-        <AdminStatusMap reports={reports} height="70vh" className="admin-status-map" />
+        <AdminStatusMap
+          reports={reports}
+          height={isMobile ? "55vh" : "70vh"}
+          className="admin-status-map"
+        />
       )}
     </section>
   );
@@ -91,12 +127,18 @@ function MapPanel({ loading, reports }) {
 
 export default function HomePage() {
   const { user } = useAuth();
+  const location = useLocation();
+  const isMobile = useIsMobile();
+  const { setHomeView } = useResidentNav();
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeView, setActiveView] = useState("dashboard");
-  const [showReportsPanel, setShowReportsPanel] = useState(false);
+  const [activeView, setActiveView] = useState(() => location.state?.view || "dashboard");
+  const [showReportsPanel, setShowReportsPanel] = useState(
+    () => Boolean(location.state?.openReports || location.state?.view === "reports")
+  );
   const [sortMode, setSortMode] = useState({ type: "all" });
   const [now, setNow] = useState(() => new Date());
+  const [deletingId, setDeletingId] = useState(null);
 
   const loadReports = () => {
     reportsApi
@@ -105,6 +147,27 @@ export default function HomePage() {
       .catch(() => toast.error("Failed to load reports"))
       .finally(() => setLoading(false));
   };
+
+  useEffect(() => {
+    const nextView = location.state?.view;
+    if (nextView) {
+      setActiveView(nextView);
+      if (nextView === "reports" || location.state?.openReports) {
+        setShowReportsPanel(true);
+      }
+      window.history.replaceState({}, document.title);
+      return;
+    }
+    if (location.state?.openReports) {
+      setActiveView("reports");
+      setShowReportsPanel(true);
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
+
+  useEffect(() => {
+    setHomeView(activeView);
+  }, [activeView, setHomeView]);
 
   useEffect(() => {
     loadReports();
@@ -135,6 +198,7 @@ export default function HomePage() {
     showReportsPanel && (activeView === "dashboard" || activeView === "reports");
   const showMap = activeView === "map";
   const showStatistics = activeView === "statistics";
+  const showCommunityFeed = activeView === "community-feed";
   const showNewReport = activeView === "new-report";
 
   const handleViewChange = (view) => {
@@ -146,9 +210,37 @@ export default function HomePage() {
     }
   };
 
+  const handleDeleteReport = async (report) => {
+    if (
+      !window.confirm(
+        `Delete report "${report.title}"? This cannot be undone.`
+      )
+    ) {
+      return;
+    }
+
+    setDeletingId(report._id);
+    try {
+      await reportsApi.remove(report._id);
+      toast.success("Report deleted");
+      setReports((prev) => prev.filter((row) => row._id !== report._id));
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Could not delete report");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   return (
-    <div className="admin-dashboard-layout text-black">
-      <ResidentSidebar activeView={activeView} onViewChange={handleViewChange} />
+    <div
+      className={`admin-dashboard-layout text-black ${
+        isMobile ? "admin-dashboard-layout--mobile" : ""
+      }`}
+      data-home-view={activeView}
+    >
+      {!isMobile && (
+        <ResidentSidebar activeView={activeView} onViewChange={handleViewChange} />
+      )}
 
       <div className="admin-dashboard-main space-y-6">
         {showOverview && (
@@ -166,7 +258,7 @@ export default function HomePage() {
           </section>
         )}
 
-        {showOverview && !showReportsPanel && (
+        {showOverview && !showReportsPanel && !isMobile && (
           <div>
             <button
               type="button"
@@ -187,14 +279,22 @@ export default function HomePage() {
             onSortChange={setSortMode}
             listVariant={listVariant}
             now={now}
+            onDeleteReport={handleDeleteReport}
+            deletingId={deletingId}
           />
         )}
 
-        {showMap && <MapPanel loading={loading} reports={reports} />}
+        {showMap && <MapPanel loading={loading} reports={reports} isMobile={isMobile} />}
 
         {showStatistics && (
           <section className="card p-6">
             <StatisticsPanel />
+          </section>
+        )}
+
+        {showCommunityFeed && (
+          <section className="card p-6">
+            <CommunityFeedPanel />
           </section>
         )}
 

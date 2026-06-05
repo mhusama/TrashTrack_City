@@ -18,9 +18,15 @@ import NotificationsPage from "./pages/NotificationsPage.jsx";
 import AdminReportDetailPage from "./pages/AdminReportDetailPage.jsx";
 import AdminPendingApprovalDetailPage from "./pages/AdminPendingApprovalDetailPage.jsx";
 import ResidentReportDetailPage from "./pages/ResidentReportDetailPage.jsx";
+import EditReportPage from "./pages/EditReportPage.jsx";
 import TeamLeaderReportDetailPage from "./pages/TeamLeaderReportDetailPage.jsx";
 import TeamMemberReportDetailPage from "./pages/TeamMemberReportDetailPage.jsx";
 import LandingPage from "./pages/LandingPage.jsx";
+import MobileGuestPage from "./pages/MobileGuestPage.jsx";
+import useIsMobile from "./hooks/useIsMobile.js";
+import RateServicePage from "./pages/RateServicePage.jsx";
+import MyReviewPage from "./pages/MyReviewPage.jsx";
+import ReviewThreadPage from "./pages/ReviewThreadPage.jsx";
 import EditProfilePage from "./pages/EditProfilePage.jsx";
 
 function PublicOnly({ children }) {
@@ -131,6 +137,14 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="reviews/:reportId/replies"
+          element={
+            <ProtectedRoute>
+              <ReviewThreadPage />
+            </ProtectedRoute>
+          }
+        />
         <Route path="forgot-password" element={<ForgotPasswordPage />} />
         <Route path="reset-password" element={<ResetPasswordPage />} />
         <Route
@@ -146,6 +160,30 @@ export default function App() {
           element={
             <RoleRoute allowedRoles={["resident"]}>
               <NewReportPage />
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="reports/:id/review"
+          element={
+            <RoleRoute allowedRoles={["resident"]}>
+              <MyReviewPage />
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="reports/:id/edit"
+          element={
+            <RoleRoute allowedRoles={["resident"]}>
+              <EditReportPage />
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="reports/:id/rate"
+          element={
+            <RoleRoute allowedRoles={["resident"]}>
+              <RateServicePage />
             </RoleRoute>
           }
         />
@@ -174,6 +212,7 @@ function CrewRedirect() {
 
 function RootIndex() {
   const { user, loading } = useAuth();
+  const isMobile = useIsMobile();
   if (loading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center text-black">
@@ -181,7 +220,7 @@ function RootIndex() {
       </div>
     );
   }
-  if (!user) return <LandingPage />;
+  if (!user) return isMobile ? <MobileGuestPage /> : <LandingPage />;
   if (user.role === "admin") {
     return (
       <RoleRoute allowedRoles={["admin"]}>

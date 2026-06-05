@@ -7,6 +7,8 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { ROLES, homePathForRole } from "../config/roles.js";
 import { CREW_SUB_ROLES } from "../config/teams.js";
 import { authApi, teamsApi } from "../api/client.js";
+import PasswordInput from "../components/PasswordInput.jsx";
+import useIsMobile from "../hooks/useIsMobile.js";
 
 export default function RegisterPage() {
   const { register } = useAuth();
@@ -28,6 +30,7 @@ export default function RegisterPage() {
   const [teamOptions, setTeamOptions] = useState([]);
   const [previewResidentId, setPreviewResidentId] = useState("");
   const [previewTeamId, setPreviewTeamId] = useState("");
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (!profilePicture) {
@@ -133,9 +136,9 @@ export default function RegisterPage() {
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      className="card mx-auto max-w-lg p-8"
+      className="auth-card card mx-auto max-w-lg p-8"
     >
-      <div className="mb-8 flex flex-col gap-6 sm:flex-row sm:items-start">
+      <div className="auth-card-header mb-8 flex flex-col gap-6 sm:flex-row sm:items-start">
         <label className="register-passport-photo shrink-0 cursor-pointer">
           <span className="sr-only">Profile picture (optional)</span>
           <div className="register-passport-photo-frame flex items-center justify-center overflow-hidden border-2 border-theme-border bg-[#fce1ee]">
@@ -164,9 +167,13 @@ export default function RegisterPage() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-          <label className="block flex-1 space-y-1">
+      <form onSubmit={handleSubmit} className="auth-form space-y-4">
+        <div
+          className={`auth-role-row grid gap-3 ${
+            role === "cleaning_crew" ? "grid-cols-2" : "grid-cols-1"
+          }`}
+        >
+          <label className="block space-y-1">
             <span className="label-text">Role</span>
             <select
               value={role}
@@ -187,7 +194,7 @@ export default function RegisterPage() {
             </select>
           </label>
           {role === "cleaning_crew" && (
-            <label className="block flex-1 space-y-1">
+            <label className="block space-y-1">
               <span className="label-text">Crew role</span>
               <select
                 value={crewSubRole}
@@ -281,6 +288,25 @@ export default function RegisterPage() {
             placeholder="+880…"
           />
         </label>
+
+        <div className="auth-credentials">
+          <label className="block space-y-1">
+            <span className="label-text">Password</span>
+            <PasswordInput
+              required
+              minLength={6}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="new-password"
+              initialVisible={isMobile}
+            />
+          </label>
+        </div>
+
+        <div className="auth-identity-section space-y-4 border-t border-[#fce1ee] pt-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-[#6b0f1a]">
+            Identity verification
+          </p>
         <label className="block space-y-1">
           <span className="label-text">NID number</span>
           <input
@@ -314,18 +340,8 @@ export default function RegisterPage() {
             />
           </label>
         </div>
-        <label className="block space-y-1">
-          <span className="label-text">Password</span>
-          <input
-            type="password"
-            required
-            minLength={6}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="input-field"
-          />
-        </label>
-        <button type="submit" disabled={loading} className="btn-primary w-full py-3">
+        </div>
+        <button type="submit" disabled={loading} className="auth-submit-btn btn-primary w-full py-3">
           {loading ? "Creating…" : "Register"}
         </button>
       </form>

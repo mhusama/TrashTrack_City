@@ -5,7 +5,7 @@ import { teamsApi } from "../api/client.js";
 import CrewCredentialsPanel from "./CrewCredentialsPanel.jsx";
 import { mediaUrl } from "../utils/mediaUrl.js";
 
-const COL_COUNT = 7;
+const COL_COUNT = 8;
 
 function PersonButton({ name, onClick, disabled }) {
   if (!name || name === "—" || disabled) {
@@ -167,9 +167,10 @@ export default function AdminTeamsTable() {
                 <th className="px-4 py-3 font-semibold">Team no.</th>
                 <th className="px-4 py-3 font-semibold">Team Leader</th>
                 <th className="px-4 py-3 font-semibold">Team ID</th>
-                <th className="px-4 py-3 font-semibold">Assigned Tasks</th>
+                <th className="px-4 py-3 font-semibold">Active Tasks</th>
                 <th className="px-4 py-3 font-semibold">Disposal in Progress</th>
                 <th className="px-4 py-3 font-semibold">Pending Approval</th>
+                <th className="px-4 py-3 font-semibold">Approved Reports</th>
                 <th className="px-4 py-3 font-semibold">Members</th>
               </tr>
             </thead>
@@ -191,6 +192,7 @@ export default function AdminTeamsTable() {
                     <td className="px-4 py-3">{team.assignedTasks}</td>
                     <td className="px-4 py-3">{team.disposalInProgress}</td>
                     <td className="px-4 py-3">{team.pendingApproval}</td>
+                    <td className="px-4 py-3">{team.approvedReports ?? 0}</td>
                     <td className="px-4 py-3">
                       <button
                         type="button"

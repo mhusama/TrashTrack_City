@@ -71,6 +71,14 @@ const reportSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    /** Resident review after resolve — persisted on main DB (e.g. test.reports). */
+    feedback: {
+      rating: { type: Number, min: 1, max: 5 },
+      comment: { type: String, trim: true, default: "" },
+      photoUrl: { type: String, default: "" },
+      submittedAt: { type: Date, default: null },
+      likes: [{ type: mongoose.Schema.Types.ObjectId }],
+    },
   },
   { timestamps: true }
 );

@@ -83,12 +83,15 @@ export async function notifyReportApproved(report) {
   if (ownerId) {
     await Notification.create({
       user: ownerId,
-      message: `Your report "${report.title}"${idLabel} issued ${dateLabel} has been approved and marked Resolved.`,
+      message: `Your report "${report.title}"${idLabel} issued ${dateLabel} has been approved and marked Resolved. Open My Reports and tap Rate Service to review the cleanup work.`,
       type: "resident_task_completed",
       report: report._id,
     });
 
     const residentEmail = report.reportedBy?.email;
+    const reviewPrompt =
+      "You can review the cleanup work from My Reports — tap Rate Service to rate the team, leave a comment, and optionally add a photo.";
+
     console.log("[notifyReportApproved] Sending email to resident:", {
       email: residentEmail,
       title: report.title,
@@ -99,7 +102,7 @@ export async function notifyReportApproved(report) {
       sendNotificationEmail({
         to: residentEmail,
         subject: `Your task is completed: ${report.title}`,
-        text: `Good news! Your report "${report.title}" has been reviewed and approved by the admin. The task is now complete.`,
+        text: `Good news! Your report "${report.title}" has been reviewed and approved by the admin. The task is now complete.\n\n${reviewPrompt}`,
       }).catch((err) => {
         console.error("[notifyReportApproved] Email send error:", err);
       });

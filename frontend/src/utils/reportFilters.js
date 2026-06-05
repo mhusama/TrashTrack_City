@@ -64,6 +64,11 @@ export function filterReports(reports, sortMode, now = new Date()) {
   }
 }
 
+/** Apply My Reports sort modes to community feed items (same report fields). */
+export function filterFeedItems(items, sortMode, now = new Date()) {
+  return filterReports(items, sortMode, now);
+}
+
 export function getFilterLabel(sortMode) {
   switch (sortMode.type) {
     case "area":

@@ -34,6 +34,16 @@ const userSchema = new mongoose.Schema(
     resetPasswordExpires: { type: Date, select: false },
     residentId: { type: String, sparse: true, unique: true, trim: true, uppercase: true },
     teamId: { type: String, sparse: true, unique: true, trim: true, uppercase: true },
+    /** Team leader aggregate rating from resident feedback (c_c DB). */
+    rating: { type: Number, default: 0, min: 0, max: 5 },
+    reviewedBy: { type: Number, default: 0, min: 0 },
+    /** Resident report outcomes tracked for admin Resident Activities. */
+    reportsAccepted: { type: Number, default: 0, min: 0 },
+    reportsRejected: { type: Number, default: 0, min: 0 },
+    /** Reviews this resident gave (count + average rating they assigned). */
+    reviewsGivenCount: { type: Number, default: 0, min: 0 },
+    averageReviewRatingGiven: { type: Number, default: 0, min: 0, max: 5 },
+    blocked: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

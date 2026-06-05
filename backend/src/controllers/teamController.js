@@ -11,9 +11,53 @@ import {
 import {
   notifyReportApproved,
   notifyReportAssigned,
+  notifyStatusChange,
 } from "../utils/notifications.js";
+import { updateReportOutcomeCounts } from "../services/residentActivityService.js";
 
-const ACTIVE_ASSIGNMENT_STATUSES = ["assigned", "disposal_in_progress", "awaiting_approval"];
+function isActiveTeamAssignment(report) {
+  return (
+    Boolean(report.assignedTeam && String(report.assignedTeam).trim()) &&
+    report.status !== "resolved" &&
+    report.status !== "rejected"
+  );
+}
+
+/** Assigned to the team and not resolved/rejected. */
+async function countActiveTeamAssignments(teamName, excludeReportId = null) {
+  const filter = {
+    assignedTeam: teamName,
+    status: { $nin: ["resolved", "rejected"] },
+  };
+  if (excludeReportId) {
+    filter._id = { $ne: excludeReportId };
+  }
+  return Report.countDocuments(filter);
+}
+
+/** When checking capacity, exclude the current report only if it already counts toward this team. */
+function capacityExcludeReportId(report, teamName) {
+  if (!report?._id) return null;
+  if (isActiveTeamAssignment(report) && report.assignedTeam === teamName) {
+    return report._id;
+  }
+  return null;
+}
+
+async function countPendingApprovals(teamName) {
+  return Report.countDocuments({
+    assignedTeam: teamName,
+    crewStatus: "awaiting_approval",
+    status: { $nin: ["resolved", "rejected"] },
+  });
+}
+
+async function countApprovedReports(teamName) {
+  return Report.countDocuments({
+    assignedTeam: teamName,
+    status: "resolved",
+  });
+}
 
 async function getTeamLeaderRecord(teamName) {
   const CrewUser = getUserModel("cleaning_crew");
@@ -105,11 +149,12 @@ export async function getTeamsOverview(req, res) {
     const teams = await Promise.all(
       keys.map(async (teamName) => {
         const leader = await getTeamLeaderRecord(teamName);
-        const [assignedTasks, disposalInProgress, pendingApproval, teamDisplayLabel] =
+        const [assignedTasks, disposalInProgress, pendingApproval, approvedReports, teamDisplayLabel] =
           await Promise.all([
-            countTeamReports(teamName, { $in: ACTIVE_ASSIGNMENT_STATUSES }),
+            countActiveTeamAssignments(teamName),
             countTeamReports(teamName, "disposal_in_progress"),
-            countTeamReports(teamName, "awaiting_approval"),
+            countPendingApprovals(teamName),
+            countApprovedReports(teamName),
             resolveTeamDisplayName(teamName),
           ]);
 
@@ -124,6 +169,7 @@ export async function getTeamsOverview(req, res) {
           assignedTasks,
           disposalInProgress,
           pendingApproval,
+          approvedReports,
           atCapacity,
           availability: atCapacity ? "Not available" : "Available",
         };
@@ -182,17 +228,25 @@ export async function getCrewUserCredentials(req, res) {
 export async function getAssignmentTable(req, res) {
   try {
     const { reportId } = req.query;
+    const report = reportId
+      ? await Report.findById(reportId).select("assignedTeam status").lean()
+      : null;
     const keys = await getAllTeamKeysOrdered();
 
     const teams = await Promise.all(
       keys.map(async (teamName) => {
-        const assignedTasks = await countTeamReports(
+        const assignedTasks = await countActiveTeamAssignments(teamName);
+        const excludeForCapacity = capacityExcludeReportId(report, teamName);
+        const activeForCapacity = await countActiveTeamAssignments(
           teamName,
-          { $in: ACTIVE_ASSIGNMENT_STATUSES },
-          reportId || null
+          excludeForCapacity
         );
+        const alreadyOnTeam =
+          report &&
+          isActiveTeamAssignment(report) &&
+          report.assignedTeam === teamName;
+        const atCapacity = activeForCapacity >= MAX_TEAM_ASSIGNMENTS;
         const teamLeader = await getTeamLeaderName(teamName);
-        const atCapacity = assignedTasks >= MAX_TEAM_ASSIGNMENTS;
         const displayLabel = await resolveTeamDisplayName(teamName);
 
         return {
@@ -200,8 +254,8 @@ export async function getAssignmentTable(req, res) {
           displayLabel,
           teamLeader,
           assignedTasks,
-          availability: atCapacity ? "Not available" : "Available",
-          canAssign: !atCapacity,
+          availability: atCapacity && !alreadyOnTeam ? "Not available" : "Available",
+          canAssign: !atCapacity || alreadyOnTeam,
         };
       })
     );
@@ -227,18 +281,16 @@ export async function assignReportToTeam(req, res) {
     }
 
     const previousTeam = report.assignedTeam;
-    const isActiveAssignment =
-      previousTeam && ACTIVE_ASSIGNMENT_STATUSES.includes(report.crewStatus);
+    const isActiveAssignment = isActiveTeamAssignment(report);
 
     if (isActiveAssignment && previousTeam === teamName) {
       await report.populate("reportedBy", "name email phone residentId");
       return res.json({ report });
     }
 
-    const assignedTasks = await countTeamReports(
+    const assignedTasks = await countActiveTeamAssignments(
       teamName,
-      { $in: ACTIVE_ASSIGNMENT_STATUSES },
-      report._id
+      capacityExcludeReportId(report, teamName)
     );
     if (assignedTasks >= MAX_TEAM_ASSIGNMENTS) {
       return res.status(400).json({ message: "This team already has 3 active assignments" });
@@ -275,10 +327,22 @@ export async function assignReportToTeam(req, res) {
 
 export async function listPendingApprovals(req, res) {
   try {
-    const reports = await Report.find({
-      crewStatus: "awaiting_approval",
-      status: { $ne: "resolved" }
-    })
+    const filterType = req.query.filter === "approved" ? "approved" : "pending";
+
+    const query =
+      filterType === "approved"
+        ? {
+            approvalRemark: "approved",
+            status: "resolved",
+            "updatedTaskReport.submittedAt": { $ne: null },
+          }
+        : {
+            crewStatus: "awaiting_approval",
+            status: { $nin: ["resolved", "rejected"] },
+            "updatedTaskReport.submittedAt": { $ne: null },
+          };
+
+    const reports = await Report.find(query)
       .populate("reportedBy", "name email phone residentId")
       .sort({ updatedAt: -1 });
 
@@ -296,7 +360,7 @@ export async function listPendingApprovals(req, res) {
       }))
     );
 
-    res.json({ reports: rows });
+    res.json({ reports: rows, filter: filterType });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -307,7 +371,7 @@ export async function approveReport(req, res) {
     const { id } = req.params;
     const { approval } = req.body;
 
-    if (!["approved", "not_approved"].includes(approval)) {
+    if (!["approved", "not_approved", "rejected"].includes(approval)) {
       return res.status(400).json({ message: "Invalid approval value" });
     }
 
@@ -316,29 +380,47 @@ export async function approveReport(req, res) {
       return res.status(404).json({ message: "Report not found" });
     }
 
-    report.approvalRemark = approval;
+    const previousStatus = report.status;
 
     if (approval === "approved") {
+      report.approvalRemark = "approved";
       report.crewStatus = "approved";
       report.status = "resolved";
       report.resolvedAt = new Date();
+    } else if (approval === "rejected") {
+      report.approvalRemark = "not_approved";
+      report.status = "rejected";
+      report.resolvedAt = null;
+      report.assignedTeam = "";
+      report.teamAssignedAt = null;
+      report.crewStatus = "unassigned";
+      report.assignedTransportRegistration = "";
+      report.assignedTransportLabel = "";
+      report.updatedTaskReport = {
+        description: "",
+        imageUrl: "",
+        updateDate: "",
+        submittedAt: null,
+      };
+    } else {
+      report.approvalRemark = "not_approved";
     }
 
     await report.save();
     await report.populate("reportedBy", "name email phone residentId");
 
-    console.log("[approveReport] Report populated:", {
-      reportId: report.reportId,
-      reportedBy: report.reportedBy,
-      email: report.reportedBy?.email,
-      approval,
-    });
+    if (approval === "approved") {
+      await updateReportOutcomeCounts(report.reportedBy._id, previousStatus, "resolved");
+    } else if (approval === "rejected") {
+      await updateReportOutcomeCounts(report.reportedBy._id, previousStatus, "rejected");
+    }
 
     if (approval === "approved") {
-      console.log("[approveReport] Calling notifyReportApproved for:", report.title);
       notifyReportApproved(report).catch((err) => {
         console.error("[approveReport] notifyReportApproved error:", err);
       });
+    } else if (approval === "rejected") {
+      notifyStatusChange(report).catch(console.error);
     }
 
     res.json({ report });

@@ -1,6 +1,7 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
+import os from "os";
 import path from "path";
 import { fileURLToPath } from "url";
 import { connectDB } from "./config/db.js";
@@ -18,10 +19,14 @@ import leadershipChatRoutes from "./routes/leadershipChatRoutes.js";
 import teamChatRoutes from "./routes/teamChatRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import statisticsRoutes from "./routes/statisticsRoutes.js";
+import feedbackRoutes from "./routes/feedbackRoutes.js";
+import communityFeedRoutes from "./routes/communityFeedRoutes.js";
+import adminRoutes from "./routes/adminRoutes.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 const PORT = process.env.PORT || 5000;
+const HOST = process.env.HOST || "0.0.0.0";
 
 const allowedOrigins = [
   process.env.CLIENT_URL,
@@ -31,10 +36,43 @@ const allowedOrigins = [
   .filter(Boolean)
   .map((url) => url.trim().replace(/\/$/, ""));
 
+function isPrivateNetworkHost(hostname) {
+  if (!hostname) return false;
+  if (hostname === "localhost" || hostname === "127.0.0.1") return true;
+  if (/^192\.168\.\d{1,3}\.\d{1,3}$/.test(hostname)) return true;
+  if (/^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(hostname)) return true;
+  if (/^172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}$/.test(hostname)) return true;
+  return false;
+}
+
+function isNgrokHost(hostname) {
+  if (!hostname) return false;
+  const host = hostname.toLowerCase();
+  return (
+    host.endsWith(".ngrok-free.app") ||
+    host.endsWith(".ngrok-free.dev") ||
+    host.endsWith(".ngrok.io") ||
+    host.endsWith(".ngrok.app")
+  );
+}
+
+function isAllowedOrigin(origin) {
+  if (!origin) return true;
+  const normalized = origin.trim().replace(/\/$/, "");
+  if (allowedOrigins.includes(normalized)) return true;
+  try {
+    const { hostname, protocol } = new URL(origin);
+    if (protocol !== "http:" && protocol !== "https:") return false;
+    return isPrivateNetworkHost(hostname) || isNgrokHost(hostname);
+  } catch {
+    return false;
+  }
+}
+
 app.use(
   cors({
     origin(origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (isAllowedOrigin(origin)) {
         callback(null, true);
         return;
       }
@@ -60,6 +98,9 @@ app.use("/api/leadership-chat", leadershipChatRoutes);
 app.use("/api/team-chat", teamChatRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/statistics", statisticsRoutes);
+app.use("/api/feedback", feedbackRoutes);
+app.use("/api/community-feed", communityFeedRoutes);
+app.use("/api/admin", adminRoutes);
 
 app.use((err, _req, res, _next) => {
   console.error(err);
@@ -70,8 +111,14 @@ async function start() {
   await connectDB();
   initUserModels();
   logSmtpStatus();
-  app.listen(PORT, () => {
+  app.listen(PORT, HOST, () => {
     console.log(`Server running on http://localhost:${PORT}`);
+    const lanIp = Object.values(os.networkInterfaces())
+      .flat()
+      .find((net) => net?.family === "IPv4" && !net.internal)?.address;
+    if (lanIp) {
+      console.log(`  Network: http://${lanIp}:${PORT}`);
+    }
   });
 }
 

@@ -9,6 +9,7 @@ import CrewTeamPanel from "../components/CrewTeamPanel.jsx";
 import CrewChatPanel from "../components/CrewChatPanel.jsx";
 import WelcomeHeader from "../components/WelcomeHeader.jsx";
 import StatisticsPanel from "../components/statistics/StatisticsPanel.jsx";
+import CommunityFeedPanel from "../components/CommunityFeedPanel.jsx";
 
 export default function TeamLeaderDashboardPage() {
   const { user } = useAuth();
@@ -40,7 +41,7 @@ export default function TeamLeaderDashboardPage() {
   }, []);
 
   const activeCount = reports.filter(
-    (r) => r.crewStatus === "assigned" || r.crewStatus === "disposal_in_progress"
+    (r) => r.status !== "resolved" && r.status !== "rejected"
   ).length;
 
   return (
@@ -127,6 +128,11 @@ export default function TeamLeaderDashboardPage() {
         {activeView === "statistics" && (
           <section className="card p-6">
             <StatisticsPanel title="City Statistics" />
+          </section>
+        )}
+        {activeView === "community-feed" && (
+          <section className="card p-6">
+            <CommunityFeedPanel />
           </section>
         )}
       </div>

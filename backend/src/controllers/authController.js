@@ -192,6 +192,12 @@ export async function login(req, res) {
       });
     }
 
+    if (accountRole === "resident" && user.blocked) {
+      return res.status(403).json({
+        message: "Your account has been blocked. Contact support for help.",
+      });
+    }
+
     const token = signToken(user._id.toString(), accountRole);
     res.json({ user: await buildUserResponse(user), token });
   } catch (err) {

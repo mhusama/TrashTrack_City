@@ -6,6 +6,7 @@ import { authApi } from "../api/client.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { homePathForRole } from "../config/roles.js";
 import { mediaUrl } from "../utils/mediaUrl.js";
+import PasswordInput from "../components/PasswordInput.jsx";
 
 export default function EditProfilePage() {
   const { user, setUser } = useAuth();
@@ -161,23 +162,21 @@ export default function EditProfilePage() {
 
         <label className="block space-y-1">
           <span className="label-text">New password (optional)</span>
-          <input
-            type="password"
+          <PasswordInput
             minLength={6}
             value={form.password}
             onChange={(e) => setForm({ ...form, password: e.target.value })}
-            className="input-field"
+            autoComplete="new-password"
           />
         </label>
 
         <label className="block space-y-1">
           <span className="label-text">Confirm new password</span>
-          <input
-            type="password"
+          <PasswordInput
             minLength={6}
             value={form.confirmPassword}
             onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
-            className="input-field"
+            autoComplete="new-password"
           />
         </label>
 

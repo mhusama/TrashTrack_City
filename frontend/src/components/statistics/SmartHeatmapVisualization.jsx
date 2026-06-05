@@ -71,6 +71,68 @@ function FilterChip({ active, onClick, children }) {
   );
 }
 
+function HeatmapFilterPanel({ wasteType, setWasteType, timeRange, setTimeRange, severity, setSeverity }) {
+  return (
+    <>
+      <p className="mb-3 flex items-center gap-2 text-sm font-bold text-white">
+        <TrendingUp className="h-4 w-4 text-cyan-400" />
+        Smart filters
+      </p>
+
+      <div className="mb-4 space-y-2">
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-cyan-300/80">
+          Waste type
+        </p>
+        <div className="flex flex-wrap gap-1.5">
+          {HEATMAP_WASTE_FILTERS.map((w) => (
+            <FilterChip
+              key={w.id}
+              active={wasteType === w.id}
+              onClick={() => setWasteType(w.id)}
+            >
+              {w.label}
+            </FilterChip>
+          ))}
+        </div>
+      </div>
+
+      <div className="mb-4 space-y-2">
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-cyan-300/80">
+          Time range
+        </p>
+        <div className="flex flex-wrap gap-1.5">
+          {HEATMAP_TIME_FILTERS.map((t) => (
+            <FilterChip
+              key={t.id}
+              active={timeRange === t.id}
+              onClick={() => setTimeRange(t.id)}
+            >
+              {t.label}
+            </FilterChip>
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-cyan-300/80">
+          Severity
+        </p>
+        <div className="flex flex-wrap gap-1.5">
+          {HEATMAP_SEVERITY_FILTERS.map((s) => (
+            <FilterChip
+              key={s.id}
+              active={severity === s.id}
+              onClick={() => setSeverity(s.id)}
+            >
+              {s.label}
+            </FilterChip>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}
+
 export default function SmartHeatmapVisualization() {
   const [wasteType, setWasteType] = useState("all");
   const [timeRange, setTimeRange] = useState("all_time");
@@ -158,65 +220,8 @@ export default function SmartHeatmapVisualization() {
         )}
       </div>
 
-      <div className="stats-map-shell relative overflow-hidden rounded-2xl border border-cyan-500/20">
-        <div className="stats-filter-panel absolute left-3 right-3 top-3 z-[1000] max-h-[min(70vh,520px)] overflow-y-auto rounded-xl p-4 md:left-auto md:right-4 md:top-4 md:w-72">
-          <p className="mb-3 flex items-center gap-2 text-sm font-bold text-white">
-            <TrendingUp className="h-4 w-4 text-cyan-400" />
-            Smart filters
-          </p>
-
-          <div className="mb-4 space-y-2">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-cyan-300/80">
-              Waste type
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              {HEATMAP_WASTE_FILTERS.map((w) => (
-                <FilterChip
-                  key={w.id}
-                  active={wasteType === w.id}
-                  onClick={() => setWasteType(w.id)}
-                >
-                  {w.label}
-                </FilterChip>
-              ))}
-            </div>
-          </div>
-
-          <div className="mb-4 space-y-2">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-cyan-300/80">
-              Time range
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              {HEATMAP_TIME_FILTERS.map((t) => (
-                <FilterChip
-                  key={t.id}
-                  active={timeRange === t.id}
-                  onClick={() => setTimeRange(t.id)}
-                >
-                  {t.label}
-                </FilterChip>
-              ))}
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-cyan-300/80">
-              Severity
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              {HEATMAP_SEVERITY_FILTERS.map((s) => (
-                <FilterChip
-                  key={s.id}
-                  active={severity === s.id}
-                  onClick={() => setSeverity(s.id)}
-                >
-                  {s.label}
-                </FilterChip>
-              ))}
-            </div>
-          </div>
-        </div>
-
+      <div className="stats-map-shell stats-map-shell--layout overflow-hidden rounded-2xl border border-cyan-500/20">
+        <div className="stats-map-canvas relative">
         <div className="stats-legend absolute bottom-4 left-3 z-[1000] rounded-lg px-3 py-2">
           <p className="mb-1 text-[10px] font-semibold uppercase text-cyan-200">Intensity</p>
           <div className="flex items-center gap-2">
@@ -249,7 +254,7 @@ export default function SmartHeatmapVisualization() {
         </AnimatePresence>
 
         {tooltipHotspot && !loading && (
-          <div className="stats-hover-card absolute bottom-16 right-3 z-[1000] max-w-xs rounded-xl p-3 text-sm md:right-80">
+          <div className="stats-hover-card absolute bottom-16 right-3 z-[1000] max-w-xs rounded-xl p-3 text-sm md:bottom-4 md:right-80">
             <p className="font-semibold text-white">{tooltipHotspot.area}</p>
             <ul className="mt-2 space-y-1 text-slate-200">
               <li>
@@ -334,6 +339,18 @@ export default function SmartHeatmapVisualization() {
             No complaints match these filters. Try a wider time range or different waste type.
           </p>
         )}
+        </div>
+
+        <div className="stats-filter-panel stats-filter-panel--dock">
+          <HeatmapFilterPanel
+            wasteType={wasteType}
+            setWasteType={setWasteType}
+            timeRange={timeRange}
+            setTimeRange={setTimeRange}
+            severity={severity}
+            setSeverity={setSeverity}
+          />
+        </div>
       </div>
     </div>
   );

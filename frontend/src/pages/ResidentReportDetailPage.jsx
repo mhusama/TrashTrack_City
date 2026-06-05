@@ -12,12 +12,15 @@ import {
 import { formatReportCategory } from "../config/reportCategories.js";
 import { STATUS_TABLE_STYLES } from "../config/reportStatus.js";
 import { mediaUrl } from "../utils/mediaUrl.js";
+import { canResidentModifyReport } from "../utils/reportActions.js";
+import ReportManageActions from "../components/ReportManageActions.jsx";
 
 export default function ResidentReportDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     reportsApi
@@ -43,6 +46,28 @@ export default function ResidentReportDetailPage() {
   }
 
   const statusStyle = STATUS_TABLE_STYLES[report.status] || STATUS_TABLE_STYLES.open;
+  const canModify = canResidentModifyReport(report);
+
+  const handleDelete = async () => {
+    if (
+      !window.confirm(
+        `Delete report "${report.title}"? This cannot be undone.`
+      )
+    ) {
+      return;
+    }
+
+    setDeleting(true);
+    try {
+      await reportsApi.remove(id);
+      toast.success("Report deleted");
+      navigate("/");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Could not delete report");
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
@@ -61,6 +86,15 @@ export default function ResidentReportDetailPage() {
         <p className={`mt-2 inline-block rounded px-2 py-0.5 text-sm ${statusStyle.textClass}`}>
           {statusStyle.label}
         </p>
+
+        {canModify && (
+          <ReportManageActions
+            reportId={report._id}
+            deleting={deleting}
+            onDelete={handleDelete}
+            className="mt-4 max-w-md"
+          />
+        )}
 
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
           <div>

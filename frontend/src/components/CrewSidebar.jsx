@@ -13,6 +13,7 @@ export default function CrewSidebar({
     { id: "tasks", label: "Task Reports" },
     { id: "team-chat", label: "Chat with your team" },
     { id: "chat", label: "Chat with all teams" },
+    { id: "community-feed", label: "Community Feed" },
   ];
 
   if (showLeadershipChat) {

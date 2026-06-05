@@ -9,6 +9,7 @@ import CrewTeamPanel from "../components/CrewTeamPanel.jsx";
 import CrewChatPanel from "../components/CrewChatPanel.jsx";
 import WelcomeHeader from "../components/WelcomeHeader.jsx";
 import StatisticsPanel from "../components/statistics/StatisticsPanel.jsx";
+import CommunityFeedPanel from "../components/CommunityFeedPanel.jsx";
 
 export default function TeamMemberDashboardPage() {
   const { user } = useAuth();
@@ -110,6 +111,11 @@ export default function TeamMemberDashboardPage() {
         {activeView === "statistics" && (
           <section className="card p-6">
             <StatisticsPanel title="City Statistics" />
+          </section>
+        )}
+        {activeView === "community-feed" && (
+          <section className="card p-6">
+            <CommunityFeedPanel />
           </section>
         )}
       </div>

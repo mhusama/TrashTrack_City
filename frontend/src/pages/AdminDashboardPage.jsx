@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
-import { reportsApi, leadershipChatApi } from "../api/client.js";
+import { reportsApi, leadershipChatApi, teamsApi } from "../api/client.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import AdminReportsTable from "../components/AdminReportsTable.jsx";
 import AdminSidebar from "../components/AdminSidebar.jsx";
@@ -11,6 +11,8 @@ import AdminPendingApprovalsTable from "../components/AdminPendingApprovalsTable
 import WelcomeHeader from "../components/WelcomeHeader.jsx";
 import StatisticsPanel from "../components/statistics/StatisticsPanel.jsx";
 import CrewChatPanel from "../components/CrewChatPanel.jsx";
+import CommunityFeedPanel from "../components/CommunityFeedPanel.jsx";
+import AdminResidentActivitiesTable from "../components/AdminResidentActivitiesTable.jsx";
 import AdminTableFilters, { ADMIN_STATUS_LABELS } from "../components/AdminTableFilters.jsx";
 import { inferReportArea } from "../config/dhakaAreas.js";
 
@@ -34,8 +36,10 @@ function ReportsSection({
   filteredReports,
   areaFilter,
   statusFilter,
+  sortOrder,
   onAreaChange,
   onStatusChange,
+  onSortOrderChange,
 }) {
   return (
     <motion.section
@@ -46,8 +50,10 @@ function ReportsSection({
       <AdminTableFilters
         areaFilter={areaFilter}
         statusFilter={statusFilter}
+        sortOrder={sortOrder}
         onAreaChange={onAreaChange}
         onStatusChange={onStatusChange}
+        onSortOrderChange={onSortOrderChange}
       />
       <h2 className="mb-4 text-lg font-semibold text-black">
         {tableHeading(areaFilter, statusFilter)}
@@ -90,6 +96,8 @@ export default function AdminDashboardPage() {
   const [showReportsPanel, setShowReportsPanel] = useState(false);
   const [areaFilter, setAreaFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [sortOrder, setSortOrder] = useState("newest");
+  const [pendingUpdatedTaskCount, setPendingUpdatedTaskCount] = useState(0);
 
   const loadReports = () => {
     reportsApi
@@ -99,21 +107,38 @@ export default function AdminDashboardPage() {
       .finally(() => setLoading(false));
   };
 
+  const loadPendingUpdatedTasks = () => {
+    teamsApi
+      .pendingApprovals("pending")
+      .then((res) => setPendingUpdatedTaskCount(res.data.reports?.length ?? 0))
+      .catch(() => {});
+  };
+
   useEffect(() => {
     loadReports();
-    const timer = setInterval(loadReports, 30_000);
+    loadPendingUpdatedTasks();
+    const timer = setInterval(() => {
+      loadReports();
+      loadPendingUpdatedTasks();
+    }, 30_000);
     return () => clearInterval(timer);
   }, []);
 
   const pendingCount = reports.filter((r) => r.status === "open").length;
 
   const filteredReports = useMemo(() => {
-    return reports.filter((report) => {
+    const filtered = reports.filter((report) => {
       const areaMatch = areaFilter === "all" || inferReportArea(report) === areaFilter;
       const statusMatch = statusFilter === "all" || report.status === statusFilter;
       return areaMatch && statusMatch;
     });
-  }, [reports, areaFilter, statusFilter]);
+
+    return [...filtered].sort((a, b) => {
+      const aTime = new Date(a.createdAt || 0).getTime();
+      const bTime = new Date(b.createdAt || 0).getTime();
+      return sortOrder === "newest" ? bTime - aTime : aTime - bTime;
+    });
+  }, [reports, areaFilter, statusFilter, sortOrder]);
 
   const showOverview = activeView === "dashboard";
   const showMap = activeView === "dashboard" || activeView === "map";
@@ -122,6 +147,8 @@ export default function AdminDashboardPage() {
   const showPending = activeView === "pending";
   const showStatistics = activeView === "statistics";
   const showLeadershipChat = activeView === "leadership-chat";
+  const showCommunityFeed = activeView === "community-feed";
+  const showResidentActivities = activeView === "resident-activities";
   const mapHeight = activeView === "map" ? "70vh" : "45vh";
 
   const handleViewChange = (view) => {
@@ -152,7 +179,10 @@ export default function AdminDashboardPage() {
                 <>
                   Municipal admin overview.{" "}
                   <span className="font-semibold">{pendingCount} pending</span> report
-                  {pendingCount !== 1 ? "s" : ""} awaiting review.
+                  {pendingCount !== 1 ? "s" : ""} awaiting review
+                  {" · "}
+                  <span className="font-semibold">{pendingUpdatedTaskCount}</span> updated task
+                  report{pendingUpdatedTaskCount !== 1 ? "s" : ""} pending review.
                 </>
               }
             />
@@ -178,8 +208,10 @@ export default function AdminDashboardPage() {
             filteredReports={filteredReports}
             areaFilter={areaFilter}
             statusFilter={statusFilter}
+            sortOrder={sortOrder}
             onAreaChange={setAreaFilter}
             onStatusChange={setStatusFilter}
+            onSortOrderChange={setSortOrder}
           />
         )}
 
@@ -201,7 +233,7 @@ export default function AdminDashboardPage() {
 
         {showPending && (
           <section className="card p-6">
-            <h2 className="mb-4 text-lg font-semibold text-black">Pending Approvals</h2>
+            <h2 className="mb-4 text-lg font-semibold text-black">Updated Task Reports</h2>
             <AdminPendingApprovalsTable />
           </section>
         )}
@@ -218,6 +250,23 @@ export default function AdminDashboardPage() {
               Chat with Admins and Leaders
             </h2>
             <CrewChatPanel api={leadershipChatApi} />
+          </section>
+        )}
+
+        {showCommunityFeed && (
+          <section className="card p-6">
+            <CommunityFeedPanel />
+          </section>
+        )}
+
+        {showResidentActivities && (
+          <section className="card p-6">
+            <h2 className="mb-2 text-lg font-semibold text-black">Resident Activities</h2>
+            <p className="mb-4 text-sm text-black/70">
+              Track reports and reviews from residents. Block users who post false reports or
+              abusive reviews.
+            </p>
+            <AdminResidentActivitiesTable />
           </section>
         )}
       </div>

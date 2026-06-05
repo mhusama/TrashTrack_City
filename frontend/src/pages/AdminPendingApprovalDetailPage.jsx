@@ -22,11 +22,26 @@ export default function AdminPendingApprovalDetailPage() {
   }, [id]);
 
   const handleApproval = async (approval) => {
+    if (
+      approval === "rejected" &&
+      !window.confirm(
+        "Reject this report? The team assignment will be cleared and the resident will be notified."
+      )
+    ) {
+      return;
+    }
+
     setUpdating(true);
     try {
       const res = await teamsApi.setApproval(id, approval);
       setReport(res.data.report);
-      toast.success(approval === "approved" ? "Report approved" : "Marked not approved");
+      const message =
+        approval === "approved"
+          ? "Report approved"
+          : approval === "rejected"
+            ? "Report rejected"
+            : "Marked not approved";
+      toast.success(message);
       setApprovalOpen(false);
     } catch (err) {
       toast.error(err.response?.data?.message || "Could not update approval");
@@ -34,6 +49,13 @@ export default function AdminPendingApprovalDetailPage() {
       setUpdating(false);
     }
   };
+
+  const approvalRemarkLabel =
+    report?.status === "rejected"
+      ? "Rejected"
+      : report?.approvalRemark === "approved"
+        ? "Approved"
+        : "Not Approved";
 
   if (loading) return <p>Loading…</p>;
   if (!report) {
@@ -52,7 +74,7 @@ export default function AdminPendingApprovalDetailPage() {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
       <Link to="/admin" className="text-sm font-medium text-[#6b0f1a] hover:underline">
-        ← Back to dashboard (Pending Approvals)
+        ← Back to dashboard (Updated Task Reports)
       </Link>
 
       <section className="card p-6">
@@ -127,7 +149,7 @@ export default function AdminPendingApprovalDetailPage() {
               <button
                 type="button"
                 onClick={() => handleApproval("approved")}
-                className="block w-full px-4 py-2 text-left text-sm hover:bg-[#6b0f1a] hover:text-white"
+                className="block w-full px-4 py-2 text-left text-sm text-green-700 hover:bg-green-50"
               >
                 Approved
               </button>
@@ -138,13 +160,28 @@ export default function AdminPendingApprovalDetailPage() {
               >
                 Not Approved
               </button>
+              <button
+                type="button"
+                onClick={() => handleApproval("rejected")}
+                className="block w-full px-4 py-2 text-left text-sm text-red-700 hover:bg-red-50"
+              >
+                Reject
+              </button>
             </div>
           )}
         </div>
         <p className="mt-3 text-sm">
           Current remark:{" "}
-          <strong>
-            {report.approvalRemark === "approved" ? "Approved" : "Not Approved"}
+          <strong
+            className={
+              approvalRemarkLabel === "Approved"
+                ? "text-green-600"
+                : approvalRemarkLabel === "Rejected"
+                  ? "text-red-600"
+                  : ""
+            }
+          >
+            {approvalRemarkLabel}
           </strong>
         </p>
       </section>

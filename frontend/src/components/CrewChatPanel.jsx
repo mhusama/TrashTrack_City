@@ -2,9 +2,84 @@ import { useEffect, useRef, useState } from "react";
 import { CornerUpLeft, Heart } from "lucide-react";
 import toast from "react-hot-toast";
 import { chatApi } from "../api/client.js";
+import ChatMediaActions from "./ChatMediaActions.jsx";
 import { mediaUrl } from "../utils/mediaUrl.js";
 
-export default function CrewChatPanel({ api = chatApi }) {
+function ChatMessageBubble({ msg, onLike, onReply, audioRefs, toggleAudioPlayback }) {
+  const messageId = msg._id || msg.id;
+  const previewText = msg.text || (msg.imageUrl ? "Photo" : msg.voiceUrl ? "Voice note" : "Message");
+
+  return (
+    <div className="rounded-lg border border-theme-border p-3">
+      <p className="text-xs font-semibold text-[#6b0f1a]">
+        {msg.senderName}
+        {msg.teamName ? ` · ${msg.teamName}` : ""}
+        {msg.crewSubRole ? ` (${msg.crewSubRole.replace("_", " ")})` : ""}
+      </p>
+      {msg.replyToMessageId && (
+        <div className="mt-1 rounded border-l-4 border-[#6b0f1a] bg-[#fce1ee]/40 p-2 text-xs text-black">
+          <p className="font-semibold text-[#6b0f1a]">
+            Reply to {msg.replyToSenderName || "message"}
+          </p>
+          <p className="mt-1 line-clamp-2">{msg.replyToText || "…"}</p>
+        </div>
+      )}
+      {msg.text && <p className="mt-1 text-sm text-black">{msg.text}</p>}
+      {msg.imageUrl && (
+        <img
+          src={mediaUrl(msg.imageUrl)}
+          alt=""
+          className="mt-2 max-h-40 rounded-lg border object-cover"
+        />
+      )}
+      {msg.voiceUrl && (
+        <audio
+          ref={(el) => {
+            audioRefs.current[messageId] = el;
+          }}
+          controls
+          preload="metadata"
+          src={mediaUrl(msg.voiceUrl)}
+          className="mt-2 w-full max-w-xs cursor-pointer"
+          onClick={() => toggleAudioPlayback(messageId)}
+        />
+      )}
+      <div className="mt-2 flex items-center gap-3 text-xs text-[#6b0f1a]">
+        <button type="button" onClick={() => onLike(messageId)} className="flex items-center gap-1">
+          <Heart className={`h-4 w-4 ${msg.likedByMe ? "fill-[#6b0f1a]" : ""}`} />
+          {msg.likeCount || 0}
+        </button>
+        <button
+          type="button"
+          onClick={() =>
+            onReply({
+              id: messageId,
+              senderName: msg.senderName,
+              text: previewText,
+            })
+          }
+          className="flex items-center gap-1 hover:underline"
+        >
+          <CornerUpLeft className="h-4 w-4" />
+          Reply
+        </button>
+      </div>
+      {msg.createdAt && (
+        <p className="mt-1 text-xs text-black/50">
+          {new Date(msg.createdAt).toLocaleString()}
+        </p>
+      )}
+    </div>
+  );
+}
+
+export default function CrewChatPanel({
+  api = chatApi,
+  messagesTitle = "Messages",
+  composerTitle = "Write a Message",
+  placeholder = "Type a message…",
+  sendLabel = "Send",
+}) {
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
   const [image, setImage] = useState(null);
@@ -186,139 +261,79 @@ export default function CrewChatPanel({ api = chatApi }) {
   };
 
   return (
-    <div className="card flex h-[70vh] flex-col p-4">
-      <div className="flex-1 space-y-3 overflow-y-auto pr-2">
-        {messages.map((msg) => (
-          <div key={msg._id || msg.id} className="rounded-lg border border-theme-border p-3">
-            <p className="text-xs font-semibold text-[#6b0f1a]">
-              {msg.senderName}
-              {msg.teamName ? ` · ${msg.teamName}` : ""}
-              {msg.crewSubRole ? ` (${msg.crewSubRole.replace("_", " ")})` : ""}
-            </p>
-            {msg.text && <p className="mt-1 text-sm">{msg.text}</p>}
-            {msg.replyToMessageId && (
-              <div className="mt-1 rounded border-l-4 border-[#6b0f1a] bg-[#fce1ee]/40 p-2 text-xs text-black">
-                <p className="font-semibold text-[#6b0f1a]">
-                  Reply to {msg.replyToSenderName || "message"}
-                </p>
-                <p className="mt-1 line-clamp-2">{msg.replyToText || "…"}</p>
-              </div>
+    <div className="card flex min-h-[70vh] flex-col p-4 sm:p-6">
+      <div className="grid min-h-0 flex-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,22rem)]">
+        <div className="flex min-h-[20rem] flex-col lg:min-h-0">
+          <h2 className="mb-3 shrink-0 text-sm font-semibold uppercase tracking-wide text-[#6b0f1a]">
+            {messagesTitle}
+          </h2>
+          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
+            {messages.length === 0 ? (
+              <p className="text-sm text-black/60">No messages yet. Start the conversation.</p>
+            ) : (
+              messages.map((msg) => (
+                <ChatMessageBubble
+                  key={msg._id || msg.id}
+                  msg={msg}
+                  onLike={toggleLike}
+                  onReply={setReplyTarget}
+                  audioRefs={audioRefs}
+                  toggleAudioPlayback={toggleAudioPlayback}
+                />
+              ))
             )}
-            {msg.imageUrl && (
-              <img
-                src={mediaUrl(msg.imageUrl)}
-                alt=""
-                className="mt-2 max-h-40 rounded-lg border object-cover"
-              />
-            )}
-            {msg.voiceUrl && (
-              <audio
-                ref={(el) => {
-                  audioRefs.current[msg._id || msg.id] = el;
-                }}
-                controls
-                preload="metadata"
-                src={mediaUrl(msg.voiceUrl)}
-                className="mt-2 w-full max-w-xs cursor-pointer"
-                onClick={() => toggleAudioPlayback(msg._id || msg.id)}
-              />
-            )}
-            <div className="mt-2 flex items-center gap-3 text-xs text-[#6b0f1a]">
-              <button
-                type="button"
-                onClick={() => toggleLike(msg._id || msg.id)}
-                className="flex items-center gap-1"
-              >
-                <Heart className={`h-4 w-4 ${msg.likedByMe ? "fill-[#6b0f1a]" : ""}`} />
-                {msg.likeCount || 0}
-              </button>
-              {msg.text && (
-                <button
-                  type="button"
-                  onClick={() =>
-                    setReplyTarget({
-                      id: msg._id || msg.id,
-                      senderName: msg.senderName,
-                      text: msg.text,
-                    })
-                  }
-                  className="flex items-center gap-1 hover:underline"
-                >
-                  <CornerUpLeft className="h-4 w-4" />
-                  Reply
-                </button>
-              )}
-            </div>
+            <div ref={bottomRef} />
           </div>
-        ))}
-        <div ref={bottomRef} />
-      </div>
-      <form onSubmit={handleSend} className="mt-4 space-y-2 border-t border-theme-border pt-4">
-        {replyTarget && (
-          <div className="rounded border-l-4 border-[#6b0f1a] bg-[#fce1ee]/40 p-2 text-xs text-black">
-            <div className="flex items-start justify-between gap-2">
-              <div>
-                <p className="font-semibold text-[#6b0f1a]">Replying to {replyTarget.senderName}</p>
-                <p className="mt-1 line-clamp-2">{replyTarget.text}</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setReplyTarget(null)}
-                className="font-semibold text-[#6b0f1a] hover:underline"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        )}
-        <textarea
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          rows={2}
-          placeholder="Type a message…"
-          className="input-field w-full"
-        />
-        <div className="flex flex-wrap gap-2">
-          <label className="guest-cta-btn cursor-pointer px-4 py-2 text-sm">
-            Image
-            <input
-              type="file"
-              accept="image/*"
-              capture="environment"
-              className="hidden"
-              onChange={(e) => setImage(e.target.files?.[0] || null)}
-            />
-          </label>
-          <button
-            type="button"
-            onClick={toggleRecording}
-            disabled={sending || processingVoice}
-            className={`guest-cta-btn px-4 py-2 text-sm ${
-              recording ? "ring-2 ring-red-600" : ""
-            }`}
-          >
-            {recording ? "Stop Voice" : "Voice"}
-          </button>
-          <label className="guest-cta-btn cursor-pointer px-4 py-2 text-sm">
-            Upload Voice
-            <input
-              type="file"
-              accept="audio/*"
-              capture
-              className="hidden"
-              onChange={(e) => setVoice(e.target.files?.[0] || null)}
-            />
-          </label>
         </div>
-        {recording && <p className="text-xs font-medium text-red-600">Recording... tap Voice again to stop.</p>}
-        {processingVoice && <p className="text-xs text-black">Processing voice note...</p>}
-        {voice && !recording && !processingVoice && (
-          <p className="text-xs text-green-700">Voice note ready: {voice.name}</p>
-        )}
-        <button type="submit" disabled={sending} className="btn-primary w-full py-2">
-          {sending ? "Sending…" : "Send"}
-        </button>
-      </form>
+
+        <aside className="flex flex-col border-t border-theme-border bg-white pt-4 lg:sticky lg:top-6 lg:z-10 lg:max-h-[calc(100vh-10rem)] lg:self-start lg:overflow-y-auto lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
+          <h2 className="mb-3 shrink-0 text-sm font-semibold uppercase tracking-wide text-[#6b0f1a]">
+            {composerTitle}
+          </h2>
+          <form onSubmit={handleSend} className="flex min-h-0 flex-1 flex-col space-y-3">
+            {replyTarget && (
+              <div className="rounded border-l-4 border-[#6b0f1a] bg-[#fce1ee]/40 p-2 text-xs text-black">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <p className="font-semibold text-[#6b0f1a]">
+                      Replying to {replyTarget.senderName}
+                    </p>
+                    <p className="mt-1 line-clamp-3">{replyTarget.text}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setReplyTarget(null)}
+                    className="shrink-0 font-semibold text-[#6b0f1a] hover:underline"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+            <textarea
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              rows={5}
+              placeholder={placeholder}
+              className="input-field min-h-[7rem] w-full flex-1 resize-y"
+            />
+            <ChatMediaActions
+              image={image}
+              onImageChange={setImage}
+              voice={voice}
+              onVoiceChange={setVoice}
+              recording={recording}
+              processingVoice={processingVoice}
+              onToggleRecording={toggleRecording}
+              disabled={sending}
+              vertical
+            />
+            <button type="submit" disabled={sending} className="btn-primary w-full py-2.5">
+              {sending ? "Sending…" : sendLabel}
+            </button>
+          </form>
+        </aside>
+      </div>
     </div>
   );
 }

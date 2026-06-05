@@ -12,7 +12,12 @@ export const ADMIN_STATUS_LABELS = {
 
 const STATUS_OPTIONS = ["open", "in_progress", "resolved", "rejected"];
 
-function FilterButton({ label, activeLabel, open, onToggle, onClose, children }) {
+const SORT_ORDER_LABELS = {
+  newest: "Newest",
+  oldest: "Oldest",
+};
+
+function FilterButton({ label, activeLabel, open, onToggle, onClose, align = "left", children }) {
   return (
     <div className="relative">
       <button
@@ -34,7 +39,11 @@ function FilterButton({ label, activeLabel, open, onToggle, onClose, children })
             aria-label="Close menu"
             onClick={onClose}
           />
-          <div className="absolute left-0 top-full z-[1100] mt-1 max-h-52 min-w-[200px] overflow-y-auto rounded-lg border border-theme-border bg-white py-1 shadow-lg">
+          <div
+            className={`absolute top-full z-[1100] mt-1 max-h-52 min-w-[200px] overflow-y-auto rounded-lg border border-theme-border bg-white py-1 shadow-lg ${
+              align === "right" ? "right-0" : "left-0"
+            }`}
+          >
             {children}
           </div>
         </>
@@ -46,27 +55,33 @@ function FilterButton({ label, activeLabel, open, onToggle, onClose, children })
 export default function AdminTableFilters({
   areaFilter,
   statusFilter,
+  sortOrder,
   onAreaChange,
   onStatusChange,
+  onSortOrderChange,
 }) {
   const [areaOpen, setAreaOpen] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
+  const [sortOpen, setSortOpen] = useState(false);
 
   const closeAll = () => {
     setAreaOpen(false);
     setStatusOpen(false);
+    setSortOpen(false);
   };
 
   return (
-    <div className="mb-4 flex flex-wrap items-center gap-3">
-      <span className="text-sm font-semibold text-black">Sort By</span>
-      <div className="flex flex-wrap items-center gap-2">
+    <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-sm font-semibold text-black">Filter</span>
+        <div className="flex flex-wrap items-center gap-2">
         <FilterButton
           label="Area"
           activeLabel={areaFilter !== "all" ? areaFilter : null}
           open={areaOpen}
           onToggle={() => {
             setStatusOpen(false);
+            setSortOpen(false);
             setAreaOpen((v) => !v);
           }}
           onClose={closeAll}
@@ -111,6 +126,7 @@ export default function AdminTableFilters({
           open={statusOpen}
           onToggle={() => {
             setAreaOpen(false);
+            setSortOpen(false);
             setStatusOpen((v) => !v);
           }}
           onClose={closeAll}
@@ -145,6 +161,38 @@ export default function AdminTableFilters({
               </button>
             </>
           )}
+        </FilterButton>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-sm font-semibold text-black">Sort by</span>
+        <FilterButton
+          label={SORT_ORDER_LABELS[sortOrder] || "Newest"}
+          open={sortOpen}
+          align="right"
+          onToggle={() => {
+            setAreaOpen(false);
+            setStatusOpen(false);
+            setSortOpen((v) => !v);
+          }}
+          onClose={closeAll}
+        >
+          {(["newest", "oldest"]).map((value) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => {
+                onSortOrderChange(value);
+                setSortOpen(false);
+              }}
+              className={`block w-full px-4 py-2 text-left text-sm transition-colors hover:bg-[#6b0f1a] hover:text-white ${
+                sortOrder === value ? "bg-[#6b0f1a] text-white" : "text-black"
+              }`}
+            >
+              {SORT_ORDER_LABELS[value]}
+            </button>
+          ))}
         </FilterButton>
       </div>
     </div>

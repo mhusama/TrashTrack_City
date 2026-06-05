@@ -10,9 +10,33 @@ import {
 import { isWithinDhakaBounds } from "../utils/dhakaBounds.js";
 import { inferAreaFromText } from "../utils/dhakaAreas.js";
 import { generateUniqueReportId } from "../utils/reportId.js";
+import {
+  assertResidentNotBlocked,
+  logResidentActivity,
+  updateReportOutcomeCounts,
+} from "../services/residentActivityService.js";
 
 function staffRoles(user) {
   return user.role === "admin" || user.role === "cleaning_crew";
+}
+
+const EDITABLE_STATUSES = ["open", "in_progress"];
+
+function assertResidentCanModifyReport(report, user) {
+  if (user.role !== "resident") {
+    return { ok: false, status: 403, message: "Only residents can modify their own reports here" };
+  }
+  if (report.reportedBy.toString() !== user._id.toString()) {
+    return { ok: false, status: 403, message: "Access denied" };
+  }
+  if (!EDITABLE_STATUSES.includes(report.status)) {
+    return {
+      ok: false,
+      status: 400,
+      message: "Report cannot be changed after it is resolved or rejected",
+    };
+  }
+  return { ok: true };
 }
 
 function reportFilterForUser(user) {
@@ -116,6 +140,9 @@ export async function createReport(req, res) {
     if (req.user.role === "cleaning_crew") {
       return res.status(403).json({ message: "Cleaning crew cannot create reports" });
     }
+    if (req.user.role === "resident") {
+      await assertResidentNotBlocked(req.user._id);
+    }
 
     const {
       title,
@@ -188,6 +215,16 @@ export async function createReport(req, res) {
 
     notifyResidentsAboutNewReport(report.toObject()).catch(console.error);
 
+    if (req.user.role === "resident") {
+      await logResidentActivity({
+        residentId: req.user._id,
+        residentPublicId: req.user.residentId || report.reportedBy?.residentId || "",
+        activityType: "report_posted",
+        activityLabel: "Posted a report",
+        reportId: report._id,
+      });
+    }
+
     const created = report.toObject();
     created.assignedTeamDisplay = "";
     res.status(201).json({ report: created });
@@ -239,9 +276,17 @@ export async function updateReportStatus(req, res) {
       return res.status(404).json({ message: "Report not found" });
     }
 
+    const previousStatus = report.status;
     Object.assign(report, updates);
+
+    if (status === "resolved" && report.assignedTeam) {
+      report.crewStatus = "approved";
+    }
+
     await report.save();
     await report.populate("reportedBy", "name email phone residentId");
+
+    await updateReportOutcomeCounts(report.reportedBy._id, previousStatus, status);
 
     // Notify based on status change
     if (status === "resolved") {
@@ -266,6 +311,101 @@ export async function updateReportStatus(req, res) {
   }
 }
 
+export async function updateReport(req, res) {
+  try {
+    if (req.user.role !== "resident") {
+      return res.status(403).json({ message: "Only residents can edit reports here" });
+    }
+    await assertResidentNotBlocked(req.user._id);
+
+    const report = await Report.findById(req.params.id);
+    if (!report) {
+      return res.status(404).json({ message: "Report not found" });
+    }
+
+    const access = assertResidentCanModifyReport(report, req.user);
+    if (!access.ok) {
+      return res.status(access.status).json({ message: access.message });
+    }
+
+    const {
+      title,
+      description,
+      category,
+      subcategory,
+      lat,
+      lng,
+      address,
+      nearbyLandmark,
+      smellRisk,
+      wasteSpreadArea,
+      sensitiveLocations,
+    } = req.body;
+
+    if (!title || lat === undefined || lng === undefined) {
+      return res.status(400).json({
+        message: "Title and location (lat, lng) are required",
+      });
+    }
+    if (!category) {
+      return res.status(400).json({ message: "Category is required" });
+    }
+
+    if (smellRisk && !VALID_SMELL_RISK.includes(smellRisk)) {
+      return res.status(400).json({ message: "Invalid smell/health risk selection" });
+    }
+    if (wasteSpreadArea && !VALID_WASTE_SPREAD.includes(wasteSpreadArea)) {
+      return res.status(400).json({ message: "Invalid waste spread area selection" });
+    }
+
+    const parsedSensitiveLocations = parseSensitiveLocations(sensitiveLocations).filter((value) =>
+      VALID_SENSITIVE.includes(value)
+    );
+
+    const latitude = Number(lat);
+    const longitude = Number(lng);
+    if (!isWithinDhakaBounds(latitude, longitude)) {
+      return res.status(400).json({
+        message: "Location must be within Dhaka city",
+      });
+    }
+
+    report.title = title;
+    report.description = description || "";
+    report.category = category;
+    report.subcategory = subcategory || "";
+    report.smellRisk = smellRisk || "";
+    report.wasteSpreadArea = wasteSpreadArea || "";
+    report.sensitiveLocations = parsedSensitiveLocations;
+    report.area = inferAreaFromText(`${address || ""} ${nearbyLandmark || ""}`);
+    report.location = {
+      lat: latitude,
+      lng: longitude,
+      address: address || "",
+      nearbyLandmark: nearbyLandmark || "",
+    };
+
+    if (req.file) {
+      report.photoUrl = `/uploads/${req.file.filename}`;
+    }
+
+    await report.save();
+    await report.populate("reportedBy", "name email phone residentId");
+
+    const out = report.toObject();
+    const hasAssignment =
+      out.assignedTeam &&
+      out.crewStatus &&
+      out.crewStatus !== "unassigned" &&
+      out.status !== "rejected";
+    out.assignedTeamDisplay = hasAssignment ? await resolveTeamDisplayName(out.assignedTeam) : "";
+
+    res.json({ report: out });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+}
+
 export async function deleteReport(req, res) {
   try {
     const report = await Report.findById(req.params.id);
@@ -274,7 +414,14 @@ export async function deleteReport(req, res) {
     }
 
     const isOwner = report.reportedBy.toString() === req.user._id.toString();
-    if (!isOwner && !staffRoles(req.user)) {
+
+    if (req.user.role === "resident") {
+      await assertResidentNotBlocked(req.user._id);
+      const access = assertResidentCanModifyReport(report, req.user);
+      if (!access.ok) {
+        return res.status(access.status).json({ message: access.message });
+      }
+    } else if (!isOwner && !staffRoles(req.user)) {
       return res.status(403).json({ message: "Access denied" });
     }
 

@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 import { authApi } from "../api/client.js";
 import { useAuth } from "../context/AuthContext.jsx";
+import PasswordInput from "../components/PasswordInput.jsx";
 
 function readTokenFromUrl(searchParams) {
   const raw = searchParams.get("token");
@@ -95,25 +96,21 @@ export default function ResetPasswordPage() {
       <form onSubmit={handleSubmit} className="mt-6 space-y-4">
         <label className="block space-y-1">
           <span className="label-text">New password</span>
-          <input
-            type="password"
+          <PasswordInput
             required
             minLength={6}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="input-field"
             autoComplete="new-password"
           />
         </label>
         <label className="block space-y-1">
           <span className="label-text">Confirm new password</span>
-          <input
-            type="password"
+          <PasswordInput
             required
             minLength={6}
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            className="input-field"
             autoComplete="new-password"
           />
         </label>

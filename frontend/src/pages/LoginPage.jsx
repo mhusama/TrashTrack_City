@@ -6,6 +6,8 @@ import { authApi } from "../api/client.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { ROLES, homePathForRole } from "../config/roles.js";
 import { CREW_SUB_ROLES } from "../config/teams.js";
+import PasswordInput from "../components/PasswordInput.jsx";
+import useIsMobile from "../hooks/useIsMobile.js";
 
 const STORAGE_KEY = "trashtrack_city_saved_emails_v1";
 
@@ -46,6 +48,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const isMobile = useIsMobile();
 
   const datalistId = "ttc-login-email-suggestions";
 
@@ -89,10 +92,12 @@ export default function LoginPage() {
     <motion.div
       initial={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="card mx-auto max-w-md p-8"
+      className="auth-card card mx-auto max-w-md p-8"
     >
-      <h1 className="text-2xl font-bold text-[#6b0f1a]">{roleTitle}</h1>
-      <p className="mt-1 text-sm text-black">Select your role and enter your credentials.</p>
+      <h1 className="auth-card-title text-2xl font-bold text-[#6b0f1a]">{roleTitle}</h1>
+      <p className="auth-card-subtitle mt-1 text-sm text-black">
+        Select your role and enter your credentials.
+      </p>
 
       <datalist id={datalistId}>
         {emailSuggestions.map((entry) => (
@@ -100,9 +105,13 @@ export default function LoginPage() {
         ))}
       </datalist>
 
-      <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-          <label className="block flex-1 space-y-1">
+      <form onSubmit={handleSubmit} className="auth-form mt-6 space-y-4">
+        <div
+          className={`auth-role-row grid gap-3 ${
+            role === "cleaning_crew" ? "grid-cols-2" : "grid-cols-1"
+          }`}
+        >
+          <label className="block space-y-1">
             <span className="label-text">Role</span>
             <select
               value={role}
@@ -117,7 +126,7 @@ export default function LoginPage() {
             </select>
           </label>
           {role === "cleaning_crew" && (
-            <label className="block flex-1 space-y-1">
+            <label className="block space-y-1">
               <span className="label-text">Crew role</span>
               <select
                 value={crewSubRole}
@@ -133,32 +142,34 @@ export default function LoginPage() {
             </label>
           )}
         </div>
-        <label className="block space-y-1">
-          <span className="label-text">Email</span>
-          <input
-            type="email"
-            name="email"
-            autoComplete="username"
-            list={datalistId}
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="input-field"
-          />
-        </label>
-        <label className="block space-y-1">
-          <span className="label-text">Password</span>
-          <input
-            type="password"
-            name="password"
-            autoComplete="current-password"
-            required
-            minLength={6}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="input-field"
-          />
-        </label>
+
+        <div className="auth-credentials space-y-3">
+          <label className="block space-y-1">
+            <span className="label-text">Email</span>
+            <input
+              type="email"
+              name="email"
+              autoComplete="username"
+              list={datalistId}
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="input-field"
+            />
+          </label>
+          <label className="block space-y-1">
+            <span className="label-text">Password</span>
+            <PasswordInput
+              name="password"
+              autoComplete="current-password"
+              required
+              minLength={6}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              initialVisible={isMobile}
+            />
+          </label>
+        </div>
 
         <div className="flex justify-end">
           <button

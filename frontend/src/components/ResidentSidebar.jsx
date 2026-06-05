@@ -4,6 +4,7 @@ const RESIDENT_NAV_ITEMS = [
   { id: "dashboard", label: "Dashboard" },
   { id: "map", label: "Map" },
   { id: "reports", label: "My Reports" },
+  { id: "community-feed", label: "Community Feed" },
   { id: "new-report", label: "New Report" },
 ];
 

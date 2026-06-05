@@ -61,7 +61,7 @@ export default function AdminAssignTeamTable({
             <tr className="border-b border-theme-border bg-[#fce1ee]">
               <th className="px-4 py-3 font-semibold">Team no.</th>
               <th className="px-4 py-3 font-semibold">Team Leader</th>
-              <th className="px-4 py-3 font-semibold">Assigned Tasks</th>
+              <th className="px-4 py-3 font-semibold">Active Tasks</th>
               <th className="px-4 py-3 font-semibold">Availability</th>
             </tr>
           </thead>

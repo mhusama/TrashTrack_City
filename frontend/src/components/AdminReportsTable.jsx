@@ -1,9 +1,7 @@
 import { Link } from "react-router-dom";
-import { sortReportsByResidentThenDate, STATUS_TABLE_STYLES } from "../config/reportStatus.js";
+import { STATUS_TABLE_STYLES } from "../config/reportStatus.js";
 
 export default function AdminReportsTable({ reports }) {
-  const sorted = sortReportsByResidentThenDate(reports);
-
   return (
     <div className="overflow-x-auto rounded-xl border border-theme-border">
       <table className="min-w-full border-collapse text-left text-sm">
@@ -18,7 +16,7 @@ export default function AdminReportsTable({ reports }) {
           </tr>
         </thead>
         <tbody>
-          {sorted.map((report) => {
+          {reports.map((report) => {
             const style = STATUS_TABLE_STYLES[report.status] || STATUS_TABLE_STYLES.open;
             const residentId = report.reportedBy?.residentId || "—";
             const assigned =

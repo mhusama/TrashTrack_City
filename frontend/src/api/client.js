@@ -42,6 +42,7 @@ export const reportsApi = {
   list: () => api.get("/api/reports"),
   get: (id) => api.get(`/api/reports/${id}`),
   create: (formData) => api.post("/api/reports", formData),
+  update: (id, formData) => api.patch(`/api/reports/${id}`, formData),
   updateStatus: (id, status) => api.patch(`/api/reports/${id}/status`, { status }),
   remove: (id) => api.delete(`/api/reports/${id}`),
 };
@@ -56,7 +57,8 @@ export const teamsApi = {
   crewUser: (userId) => api.get(`/api/teams/crew-user/${userId}`),
   assign: (reportId, teamName) =>
     api.post(`/api/teams/reports/${reportId}/assign`, { teamName }),
-  pendingApprovals: () => api.get("/api/teams/pending-approvals"),
+  pendingApprovals: (filter = "pending") =>
+    api.get("/api/teams/pending-approvals", { params: { filter } }),
   setApproval: (reportId, approval) =>
     api.patch(`/api/teams/reports/${reportId}/approval`, { approval }),
 };
@@ -94,4 +96,27 @@ export const teamChatApi = {
   list: () => api.get("/api/team-chat"),
   send: (formData) => api.post("/api/team-chat", formData),
   like: (id) => api.post(`/api/team-chat/${id}/like`),
+};
+
+export const feedbackApi = {
+  list: () => api.get("/api/feedback"),
+  submit: (id, formData) => api.post(`/api/feedback/${id}`, formData),
+  update: (id, formData) => api.patch(`/api/feedback/${id}`, formData),
+  remove: (id) => api.delete(`/api/feedback/${id}`),
+};
+
+export const communityFeedApi = {
+  list: () => api.get("/api/community-feed"),
+  getThread: (reportId) => api.get(`/api/community-feed/${reportId}/thread`),
+  getComments: (reportId) => api.get(`/api/community-feed/${reportId}/comments`),
+  sendReply: (reportId, formData) =>
+    api.post(`/api/community-feed/${reportId}/comments`, formData),
+  likeReview: (reportId) => api.post(`/api/community-feed/${reportId}/review/like`),
+  likeComment: (commentId) => api.post(`/api/community-feed/comments/${commentId}/like`),
+};
+
+export const adminApi = {
+  listResidentActivities: () => api.get("/api/admin/resident-activities"),
+  setResidentBlocked: (userId, blocked) =>
+    api.patch(`/api/admin/residents/${userId}/block`, { blocked }),
 };
