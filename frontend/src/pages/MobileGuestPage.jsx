@@ -48,6 +48,9 @@ export default function MobileGuestPage() {
             <Link to="/login" className="mobile-guest-cta">
               Sign in
             </Link>
+            <Link to="/contact" className="mobile-guest-cta">
+              Contact us
+            </Link>
           </div>
         </motion.div>
       </section>

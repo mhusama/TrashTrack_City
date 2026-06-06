@@ -21,6 +21,8 @@ const notificationSchema = new mongoose.Schema(
         "admin_new_report",
         "admin_review_needed",
         "resident_task_completed",
+        "resident_contact",
+        "admin_contact_reply",
       ],
       required: true,
     },

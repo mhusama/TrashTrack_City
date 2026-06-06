@@ -1,4 +1,6 @@
 import { Report } from "../models/Report.js";
+import { TeamLocation } from "../models/TeamLocation.js";
+import { resolveReportArea } from "../utils/dhakaAreas.js";
 import { getUserModel } from "../models/User.js";
 import { MAX_TEAM_ASSIGNMENTS } from "../config/teams.js";
 import {
@@ -233,9 +235,17 @@ export async function getAssignmentTable(req, res) {
   try {
     const { reportId } = req.query;
     const report = reportId
-      ? await Report.findById(reportId).select("assignedTeam status").lean()
+      ? await Report.findById(reportId)
+          .select("assignedTeam status area location crewStatus")
+          .lean()
       : null;
+    const reportArea = resolveReportArea(report);
     const keys = await getAllTeamKeysOrdered();
+
+    const locationDocs = await TeamLocation.find().select("name areas").lean();
+    const areasByTeam = new Map(
+      locationDocs.map((doc) => [doc.name, Array.isArray(doc.areas) ? doc.areas : []])
+    );
 
     const teams = await Promise.all(
       keys.map(async (teamName) => {
@@ -252,11 +262,16 @@ export async function getAssignmentTable(req, res) {
         const atCapacity = activeForCapacity >= MAX_TEAM_ASSIGNMENTS;
         const teamLeader = await getTeamLeaderName(teamName);
         const displayLabel = await resolveTeamDisplayName(teamName);
+        const locations = areasByTeam.get(teamName) || [];
+        const areaMatch =
+          reportArea !== "Other" && locations.includes(reportArea);
 
         return {
           teamName,
           displayLabel,
           teamLeader,
+          locations,
+          areaMatch,
           assignedTasks,
           availability: atCapacity && !alreadyOnTeam ? "Not available" : "Available",
           canAssign: !atCapacity || alreadyOnTeam,
@@ -264,7 +279,17 @@ export async function getAssignmentTable(req, res) {
       })
     );
 
-    res.json({ teams });
+    teams.sort((a, b) => {
+      if (a.areaMatch !== b.areaMatch) {
+        return Number(b.areaMatch) - Number(a.areaMatch);
+      }
+      if (a.canAssign !== b.canAssign) {
+        return Number(b.canAssign) - Number(a.canAssign);
+      }
+      return a.displayLabel.localeCompare(b.displayLabel);
+    });
+
+    res.json({ teams, reportArea });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -289,7 +314,9 @@ export async function assignReportToTeam(req, res) {
 
     if (isActiveAssignment && previousTeam === teamName) {
       await report.populate("reportedBy", "name email phone residentId");
-      return res.json({ report });
+      const out = report.toObject();
+      out.assignedTeamDisplay = await resolveTeamDisplayName(out.assignedTeam);
+      return res.json({ report: out });
     }
 
     const assignedTasks = await countActiveTeamAssignments(
@@ -323,7 +350,17 @@ export async function assignReportToTeam(req, res) {
 
     notifyReportAssigned(report).catch(console.error);
 
-    res.json({ report });
+    const out = report.toObject();
+    const hasAssignment =
+      out.assignedTeam &&
+      out.crewStatus &&
+      out.crewStatus !== "unassigned" &&
+      out.status !== "rejected";
+    out.assignedTeamDisplay = hasAssignment
+      ? await resolveTeamDisplayName(out.assignedTeam)
+      : "";
+
+    res.json({ report: out });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

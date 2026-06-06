@@ -41,6 +41,9 @@ export default function LandingPage() {
           <Link to="/login" className="guest-cta-btn px-6 py-3">
             Sign in
           </Link>
+          <Link to="/contact" className="guest-cta-btn px-6 py-3">
+            Contact us
+          </Link>
         </div>
       </motion.div>
 

@@ -11,12 +11,11 @@ export default function PasswordInput({
   autoComplete,
   placeholder,
   className = "",
-  initialVisible = true,
+  initialVisible = false,
 }) {
   const [visible, setVisible] = useState(initialVisible);
 
   const handleFocus = (event) => {
-    setVisible(true);
     const input = event.currentTarget;
     window.requestAnimationFrame(() => {
       setTimeout(() => {
@@ -48,7 +47,7 @@ export default function PasswordInput({
         aria-label={visible ? "Hide password" : "Show password"}
         aria-pressed={visible}
       >
-        {visible ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+        {visible ? <Eye className="h-5 w-5" /> : <EyeOff className="h-5 w-5" />}
       </button>
     </div>
   );

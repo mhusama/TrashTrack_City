@@ -255,21 +255,106 @@ export async function notifyAdminsAboutReview(report) {
   }
 }
 
+export async function getUniqueAdmins() {
+  const AdminModel = getUserModel("admin");
+  const ResidentModel = getResidentUserModel();
+
+  const admins = await AdminModel.find().select("_id email name").lean();
+  const legacyAdmins = await ResidentModel.find({ role: "admin" }).select("_id email name").lean();
+
+  const map = new Map();
+  for (const admin of [...(admins || []), ...(legacyAdmins || [])]) {
+    const key = (admin.email || admin._id).toString();
+    if (!map.has(key)) map.set(key, admin);
+  }
+  return Array.from(map.values());
+}
+
+export async function notifyAdminsAboutContact(messageDoc) {
+  try {
+    const uniqueAdmins = await getUniqueAdmins();
+    if (!uniqueAdmins.length) return;
+
+    const senderLabel = messageDoc.senderName?.trim() || messageDoc.senderEmail;
+    const preview =
+      messageDoc.body.length > 140
+        ? `${messageDoc.body.slice(0, 140)}…`
+        : messageDoc.body;
+    const bellMessage = `New resident message from ${senderLabel}: ${preview}`;
+
+    await Notification.insertMany(
+      uniqueAdmins.map((admin) => ({
+        user: admin._id,
+        message: bellMessage,
+        type: "resident_contact",
+      }))
+    );
+
+    const emailLines = [
+      `From: ${messageDoc.senderName?.trim() || "Guest"} <${messageDoc.senderEmail}>`,
+      messageDoc.subject ? `Subject: ${messageDoc.subject}` : "",
+      "",
+      messageDoc.body,
+    ].filter((line, index) => index !== 1 || messageDoc.subject);
+
+    await Promise.all(
+      uniqueAdmins.map((admin) =>
+        sendNotificationEmail({
+          to: admin.email,
+          subject: `Resident message: ${messageDoc.subject?.trim() || "Contact form"}`,
+          text: emailLines.join("\n"),
+        }).catch((err) =>
+          console.error("[mailer] Failed to email admin about contact", admin.email, err?.message || err)
+        )
+      )
+    );
+  } catch (err) {
+    console.error("[notifyAdminsAboutContact] error:", err?.message || err);
+  }
+}
+
+export async function notifyResidentAboutContactReply(messageDoc) {
+  try {
+    const replyPreview =
+      messageDoc.adminReply.length > 140
+        ? `${messageDoc.adminReply.slice(0, 140)}…`
+        : messageDoc.adminReply;
+
+    if (messageDoc.senderUser) {
+      await Notification.create({
+        user: messageDoc.senderUser,
+        message: `Admin replied to your message: ${replyPreview}`,
+        type: "admin_contact_reply",
+      });
+    }
+
+    const emailText = [
+      "Thank you for contacting TrashTrack City.",
+      "",
+      "Your message:",
+      messageDoc.body,
+      "",
+      "---",
+      "",
+      "Admin response:",
+      messageDoc.adminReply,
+    ].join("\n");
+
+    await sendNotificationEmail({
+      to: messageDoc.senderEmail,
+      subject: `Reply from TrashTrack City: ${messageDoc.subject?.trim() || "Your inquiry"}`,
+      text: emailText,
+    }).catch((err) =>
+      console.error("[mailer] Failed to email resident about reply", err?.message || err)
+    );
+  } catch (err) {
+    console.error("[notifyResidentAboutContactReply] error:", err?.message || err);
+  }
+}
+
 export async function notifyAdminsAboutNewReport(report) {
   try {
-    const AdminModel = getUserModel("admin");
-    const ResidentModel = getResidentUserModel();
-
-    const admins = await AdminModel.find().select("_id email name").lean();
-    const legacyAdmins = await ResidentModel.find({ role: "admin" }).select("_id email name").lean();
-
-    const combined = [...(admins || []), ...(legacyAdmins || [])];
-    const map = new Map();
-    for (const a of combined) {
-      const key = (a.email || a._id).toString();
-      if (!map.has(key)) map.set(key, a);
-    }
-    const uniqueAdmins = Array.from(map.values());
+    const uniqueAdmins = await getUniqueAdmins();
     if (!uniqueAdmins.length) return;
 
     const idLabel = report.reportId ? ` (ID: ${report.reportId})` : "";

@@ -7,6 +7,7 @@ const ADMIN_NAV_ITEMS = [
   { id: "teams", label: "Teams" },
   { id: "pending", label: "Updated Task Reports" },
   { id: "community-feed", label: "Community Feed" },
+  { id: "resident-messages", label: "Resident Messages" },
   { id: "resident-activities", label: "Resident Activities" },
   { id: "leadership-chat", label: "Chat with Admins and Leaders" },
 ];

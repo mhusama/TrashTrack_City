@@ -28,6 +28,7 @@ import RateServicePage from "./pages/RateServicePage.jsx";
 import MyReviewPage from "./pages/MyReviewPage.jsx";
 import ReviewThreadPage from "./pages/ReviewThreadPage.jsx";
 import EditProfilePage from "./pages/EditProfilePage.jsx";
+import ContactUsPage from "./pages/ContactUsPage.jsx";
 
 function PublicOnly({ children }) {
   const { user, loading } = useAuth();
@@ -145,6 +146,7 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        <Route path="contact" element={<ContactUsPage />} />
         <Route path="forgot-password" element={<ForgotPasswordPage />} />
         <Route path="reset-password" element={<ResetPasswordPage />} />
         <Route

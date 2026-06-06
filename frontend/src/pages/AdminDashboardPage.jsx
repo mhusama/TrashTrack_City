@@ -7,13 +7,14 @@ import { useAuth } from "../context/AuthContext.jsx";
 import AdminReportsTable from "../components/AdminReportsTable.jsx";
 import AdminSidebar from "../components/AdminSidebar.jsx";
 import AdminStatusMap from "../components/AdminStatusMap.jsx";
-import AdminTeamsTable from "../components/AdminTeamsTable.jsx";
+import AdminTeamsPanel from "../components/AdminTeamsPanel.jsx";
 import AdminPendingApprovalsTable from "../components/AdminPendingApprovalsTable.jsx";
 import WelcomeHeader from "../components/WelcomeHeader.jsx";
 import StatisticsPanel from "../components/statistics/StatisticsPanel.jsx";
 import CrewChatPanel from "../components/CrewChatPanel.jsx";
 import CommunityFeedPanel from "../components/CommunityFeedPanel.jsx";
 import AdminResidentActivitiesTable from "../components/AdminResidentActivitiesTable.jsx";
+import AdminResidentMessagesPanel from "../components/AdminResidentMessagesPanel.jsx";
 import AdminTableFilters, { ADMIN_STATUS_LABELS } from "../components/AdminTableFilters.jsx";
 import { inferReportArea } from "../config/dhakaAreas.js";
 import useIsMobile from "../hooks/useIsMobile.js";
@@ -155,6 +156,7 @@ export default function AdminDashboardPage() {
   const showStatistics = activeView === "statistics";
   const showLeadershipChat = activeView === "leadership-chat";
   const showCommunityFeed = activeView === "community-feed";
+  const showResidentMessages = activeView === "resident-messages";
   const showResidentActivities = activeView === "resident-activities";
   const mapHeight = activeView === "map" ? (isMobile ? "55vh" : "70vh") : isMobile ? "40vh" : "45vh";
 
@@ -251,7 +253,7 @@ export default function AdminDashboardPage() {
         {showTeams && (
           <section className="card p-6">
             <h2 className="mb-4 text-lg font-semibold text-black">Teams</h2>
-            <AdminTeamsTable />
+            <AdminTeamsPanel />
           </section>
         )}
 
@@ -280,6 +282,16 @@ export default function AdminDashboardPage() {
         {showCommunityFeed && (
           <section className="card p-6">
             <CommunityFeedPanel />
+          </section>
+        )}
+
+        {showResidentMessages && (
+          <section className="card p-4 sm:p-6">
+            <h2 className="mb-2 text-lg font-semibold text-black">Resident Messages</h2>
+            <p className="mb-4 text-sm text-black/70">
+              Read and respond to contact form messages from residents and guests.
+            </p>
+            <AdminResidentMessagesPanel />
           </section>
         )}
 

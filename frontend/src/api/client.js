@@ -61,6 +61,8 @@ export const teamsApi = {
     api.get("/api/teams/pending-approvals", { params: { filter } }),
   setApproval: (reportId, approval) =>
     api.patch(`/api/teams/reports/${reportId}/approval`, { approval }),
+  locations: () => api.get("/api/teams/locations"),
+  updateLocation: (id, data) => api.patch(`/api/teams/locations/${id}`, data),
 };
 
 export const crewApi = {
@@ -78,6 +80,13 @@ export const crewApi = {
 
 export const statisticsApi = {
   heatmap: (params) => api.get("/api/statistics/heatmap", { params }),
+};
+
+export const contactApi = {
+  submit: (data) => api.post("/api/contact", data),
+  mine: () => api.get("/api/contact/mine"),
+  adminList: () => api.get("/api/contact/admin"),
+  adminReply: (id, data) => api.patch(`/api/contact/admin/${id}/reply`, data),
 };
 
 export const chatApi = {

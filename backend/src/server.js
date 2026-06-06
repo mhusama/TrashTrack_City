@@ -8,6 +8,7 @@ import { connectDB } from "./config/db.js";
 import { initUserModels } from "./models/User.js";
 import { purgeExcludedTeamsFromRegistry } from "./services/teamRegistryService.js";
 import "./models/TeamRegistry.js";
+import "./models/TeamLocation.js";
 import "./models/Vehicle.js";
 import { logSmtpStatus } from "./utils/mailer.js";
 import authRoutes from "./routes/authRoutes.js";
@@ -23,6 +24,8 @@ import statisticsRoutes from "./routes/statisticsRoutes.js";
 import feedbackRoutes from "./routes/feedbackRoutes.js";
 import communityFeedRoutes from "./routes/communityFeedRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
+import contactRoutes from "./routes/contactRoutes.js";
+import "./models/ResidentMessage.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -102,6 +105,7 @@ app.use("/api/statistics", statisticsRoutes);
 app.use("/api/feedback", feedbackRoutes);
 app.use("/api/community-feed", communityFeedRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/contact", contactRoutes);
 
 app.use((err, _req, res, _next) => {
   console.error(err);

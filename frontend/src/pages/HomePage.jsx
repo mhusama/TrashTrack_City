@@ -19,6 +19,7 @@ import { canResidentModifyReport } from "../utils/reportActions.js";
 import ReportManageActions from "../components/ReportManageActions.jsx";
 import useIsMobile from "../hooks/useIsMobile.js";
 import useDashboardView from "../hooks/useDashboardView.js";
+import ContactUsForm from "../components/ContactUsForm.jsx";
 
 function MyReportsPanel({
   loading,
@@ -197,6 +198,7 @@ export default function HomePage() {
   const showMap = activeView === "map";
   const showStatistics = activeView === "statistics";
   const showCommunityFeed = activeView === "community-feed";
+  const showContactUs = activeView === "contact-us";
   const showNewReport = activeView === "new-report";
 
   const handleDeleteReport = async (report) => {
@@ -284,6 +286,16 @@ export default function HomePage() {
         {showCommunityFeed && (
           <section className="card p-6">
             <CommunityFeedPanel />
+          </section>
+        )}
+
+        {showContactUs && (
+          <section className="card p-4 sm:p-6">
+            <h2 className="mb-2 text-lg font-semibold text-black">Contact us</h2>
+            <p className="mb-4 text-sm text-black/80">
+              Send a message to the municipal admin team. You will be notified when they reply.
+            </p>
+            <ContactUsForm user={user} showHistory />
           </section>
         )}
 

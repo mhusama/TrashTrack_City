@@ -25,6 +25,7 @@ export const ADMIN_PRIMARY_NAV = [
 export const ADMIN_MORE_NAV = [
   { id: "teams", label: "Teams", icon: Users },
   { id: "community-feed", label: "Community", icon: MessageSquare },
+  { id: "resident-messages", label: "Messages", icon: MessageSquare },
   { id: "resident-activities", label: "Residents", icon: User },
   { id: "leadership-chat", label: "Admin Chat", icon: MessageSquare },
   { id: "statistics", label: "Statistics", icon: BarChart3 },

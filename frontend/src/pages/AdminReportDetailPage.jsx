@@ -62,6 +62,16 @@ export default function AdminReportDetailPage() {
 
   const resident = report.reportedBy;
   const statusStyle = STATUS_TABLE_STYLES[report.status] || STATUS_TABLE_STYLES.open;
+  const isAssignedToTeam =
+    Boolean(report.assignedTeam?.trim()) &&
+    report.crewStatus !== "unassigned" &&
+    report.status !== "rejected";
+  const canFinishAssigning = isAssignedToTeam && report.status === "open";
+
+  const handleFinishAssigning = async () => {
+    if (!canFinishAssigning) return;
+    await handleStatusChange("in_progress");
+  };
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="relative space-y-6">
@@ -179,6 +189,21 @@ export default function AdminReportDetailPage() {
             className="btn-primary px-6 py-2"
           >
             Team
+          </button>
+          <button
+            type="button"
+            disabled={!canFinishAssigning || updating}
+            onClick={handleFinishAssigning}
+            className="btn-primary px-6 py-2 disabled:cursor-not-allowed disabled:opacity-50"
+            title={
+              canFinishAssigning
+                ? "Mark this report as Under Review"
+                : isAssignedToTeam
+                  ? "Report is already past the assigning stage"
+                  : "Assign this report to a team first"
+            }
+          >
+            {updating ? "Saving…" : "Finish Assigning"}
           </button>
         </div>
         <p className="mt-2 text-sm text-black">

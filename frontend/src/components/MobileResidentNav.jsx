@@ -28,6 +28,7 @@ const PRIMARY_ITEMS = [
 
 const MORE_ITEMS = [
   { id: "community-feed", label: "Community Feed", to: "/", state: { view: "community-feed" } },
+  { id: "contact-us", label: "Contact Us", to: "/", state: { view: "contact-us" } },
   { id: "statistics", label: "Statistics", to: "/", state: { view: "statistics" } },
   { id: "profile", label: "Edit Profile", to: "/profile" },
   { id: "notifications", label: "Notifications", to: "/notifications" },

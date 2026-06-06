@@ -45,3 +45,12 @@ export function inferAreaFromText(text = "") {
 
   return "Other";
 }
+
+export function resolveReportArea(report) {
+  if (!report) return "Other";
+  if (report.area && report.area !== "Other") {
+    return report.area;
+  }
+  const loc = report.location || {};
+  return inferAreaFromText(`${loc.address || ""} ${loc.nearbyLandmark || ""}`);
+}
