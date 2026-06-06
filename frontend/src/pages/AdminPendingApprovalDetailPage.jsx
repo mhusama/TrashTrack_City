@@ -12,6 +12,8 @@ export default function AdminPendingApprovalDetailPage() {
   const [loading, setLoading] = useState(true);
   const [approvalOpen, setApprovalOpen] = useState(false);
   const [updating, setUpdating] = useState(false);
+  const [imageFile, setImageFile] = useState(null);
+  const [imageUpdating, setImageUpdating] = useState(false);
 
   useEffect(() => {
     reportsApi
@@ -47,6 +49,28 @@ export default function AdminPendingApprovalDetailPage() {
       toast.error(err.response?.data?.message || "Could not update approval");
     } finally {
       setUpdating(false);
+    }
+  };
+
+  const handleUpdatedTaskImageChange = async (e) => {
+    e.preventDefault();
+    if (!imageFile) {
+      toast.error("Please choose an image");
+      return;
+    }
+
+    setImageUpdating(true);
+    try {
+      const fd = new FormData();
+      fd.append("image", imageFile);
+      const res = await teamsApi.updateUpdatedTaskReportImage(id, fd);
+      setReport(res.data.report);
+      setImageFile(null);
+      toast.success("Updated task report image saved");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Could not update image");
+    } finally {
+      setImageUpdating(false);
     }
   };
 
@@ -127,6 +151,28 @@ export default function AdminPendingApprovalDetailPage() {
               className="mt-4 max-h-64 rounded-lg border object-cover"
             />
           )}
+          <form onSubmit={handleUpdatedTaskImageChange} className="mt-4 space-y-3">
+            <label className="block space-y-1">
+              <span className="label-text">Replace updated task image</span>
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+                className="input-field py-2"
+              />
+            </label>
+            <p className="text-xs text-black/70">
+              Only the image is updated. Description, update date, and all other report details
+              stay unchanged.
+            </p>
+            <button
+              type="submit"
+              disabled={imageUpdating || !imageFile}
+              className="btn-outline px-6 py-2 text-sm"
+            >
+              {imageUpdating ? "Saving…" : "Save image"}
+            </button>
+          </form>
           <p className="mt-3 text-sm">
             <span className="font-medium">Update date:</span> {updated.updateDate}
           </p>

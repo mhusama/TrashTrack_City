@@ -407,6 +407,31 @@ export async function listPendingApprovals(req, res) {
   }
 }
 
+export async function updateUpdatedTaskReportImage(req, res) {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "Image file is required" });
+    }
+
+    const report = await Report.findById(req.params.id);
+    if (!report) {
+      return res.status(404).json({ message: "Report not found" });
+    }
+
+    if (!report.updatedTaskReport?.submittedAt) {
+      return res.status(400).json({ message: "No updated task report to modify" });
+    }
+
+    report.updatedTaskReport.imageUrl = `/uploads/${req.file.filename}`;
+    await report.save();
+    await report.populate("reportedBy", "name email phone residentId");
+
+    res.json({ report });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+}
+
 export async function approveReport(req, res) {
   try {
     const { id } = req.params;

@@ -74,13 +74,12 @@ function MyReportsPanel({
                   now={now}
                 />
               </Link>
-              {canResidentModifyReport(report) && (
-                <ReportManageActions
-                  reportId={report._id}
-                  deleting={deletingId === report._id}
-                  onDelete={() => onDeleteReport(report)}
-                />
-              )}
+              <ReportManageActions
+                reportId={report._id}
+                deleting={deletingId === report._id}
+                onDelete={() => onDeleteReport(report)}
+                canDelete={canResidentModifyReport(report)}
+              />
               {canRateReport(report) && (
                 <Link
                   to={`/reports/${report._id}/rate`}

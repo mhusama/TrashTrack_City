@@ -313,83 +313,41 @@ export async function updateReportStatus(req, res) {
 
 export async function updateReport(req, res) {
   try {
-    if (req.user.role !== "resident") {
-      return res.status(403).json({ message: "Only residents can edit reports here" });
+    const isAdmin = req.user.role === "admin";
+    const isResident = req.user.role === "resident";
+
+    if (!isAdmin && !isResident) {
+      return res.status(403).json({ message: "Access denied" });
     }
-    await assertResidentNotBlocked(req.user._id);
+
+    if (isResident) {
+      await assertResidentNotBlocked(req.user._id);
+    }
 
     const report = await Report.findById(req.params.id);
     if (!report) {
       return res.status(404).json({ message: "Report not found" });
     }
 
-    const access = assertResidentCanModifyReport(report, req.user);
-    if (!access.ok) {
-      return res.status(access.status).json({ message: access.message });
+    if (isResident && report.reportedBy.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: "Access denied" });
     }
 
-    const {
-      title,
-      description,
-      category,
-      subcategory,
-      lat,
-      lng,
-      address,
-      nearbyLandmark,
-      smellRisk,
-      wasteSpreadArea,
-      sensitiveLocations,
-    } = req.body;
-
-    if (!title || lat === undefined || lng === undefined) {
-      return res.status(400).json({
-        message: "Title and location (lat, lng) are required",
-      });
-    }
-    if (!category) {
-      return res.status(400).json({ message: "Category is required" });
+    if (!req.file) {
+      return res.status(400).json({ message: "A new photo is required" });
     }
 
-    if (smellRisk && !VALID_SMELL_RISK.includes(smellRisk)) {
-      return res.status(400).json({ message: "Invalid smell/health risk selection" });
-    }
-    if (wasteSpreadArea && !VALID_WASTE_SPREAD.includes(wasteSpreadArea)) {
-      return res.status(400).json({ message: "Invalid waste spread area selection" });
-    }
-
-    const parsedSensitiveLocations = parseSensitiveLocations(sensitiveLocations).filter((value) =>
-      VALID_SENSITIVE.includes(value)
-    );
-
-    const latitude = Number(lat);
-    const longitude = Number(lng);
-    if (!isWithinDhakaBounds(latitude, longitude)) {
-      return res.status(400).json({
-        message: "Location must be within Dhaka city",
-      });
-    }
-
-    report.title = title;
-    report.description = description || "";
-    report.category = category;
-    report.subcategory = subcategory || "";
-    report.smellRisk = smellRisk || "";
-    report.wasteSpreadArea = wasteSpreadArea || "";
-    report.sensitiveLocations = parsedSensitiveLocations;
-    report.area = inferAreaFromText(`${address || ""} ${nearbyLandmark || ""}`);
-    report.location = {
-      lat: latitude,
-      lng: longitude,
-      address: address || "",
-      nearbyLandmark: nearbyLandmark || "",
-    };
-
-    if (req.file) {
-      report.photoUrl = `/uploads/${req.file.filename}`;
-    }
-
+    const originalCreatedAt = report.createdAt;
+    report.photoUrl = `/uploads/${req.file.filename}`;
     await report.save();
+
+    if (originalCreatedAt && report.createdAt?.getTime() !== originalCreatedAt.getTime()) {
+      await Report.collection.updateOne(
+        { _id: report._id },
+        { $set: { createdAt: originalCreatedAt } }
+      );
+      report.createdAt = originalCreatedAt;
+    }
     await report.populate("reportedBy", "name email phone residentId");
 
     const out = report.toObject();

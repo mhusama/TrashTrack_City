@@ -9,7 +9,9 @@ import {
   getTeamRegisterOptionsHandler,
   getTeamsOverview,
   listPendingApprovals,
+  updateUpdatedTaskReportImage,
 } from "../controllers/teamController.js";
+import { upload } from "../middleware/upload.js";
 import {
   listTeamLocations,
   updateTeamLocation,
@@ -32,5 +34,10 @@ router.get("/crew-user/:userId", getCrewUserCredentials);
 router.get("/:teamName/members", getTeamMembers);
 router.post("/reports/:id/assign", assignReportToTeam);
 router.patch("/reports/:id/approval", approveReport);
+router.patch(
+  "/reports/:id/updated-task-image",
+  upload.single("image"),
+  updateUpdatedTaskReportImage
+);
 
 export default router;
