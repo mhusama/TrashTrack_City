@@ -17,6 +17,7 @@ import AdminResidentActivitiesTable from "../components/AdminResidentActivitiesT
 import AdminResidentMessagesPanel from "../components/AdminResidentMessagesPanel.jsx";
 import AdminTableFilters, { ADMIN_STATUS_LABELS } from "../components/AdminTableFilters.jsx";
 import { inferReportArea } from "../config/dhakaAreas.js";
+import { adminTableStatusKey } from "../config/reportStatus.js";
 import useIsMobile from "../hooks/useIsMobile.js";
 import useDashboardView from "../hooks/useDashboardView.js";
 
@@ -137,7 +138,8 @@ export default function AdminDashboardPage() {
   const filteredReports = useMemo(() => {
     const filtered = reports.filter((report) => {
       const areaMatch = areaFilter === "all" || inferReportArea(report) === areaFilter;
-      const statusMatch = statusFilter === "all" || report.status === statusFilter;
+      const statusMatch =
+        statusFilter === "all" || adminTableStatusKey(report) === statusFilter;
       return areaMatch && statusMatch;
     });
 

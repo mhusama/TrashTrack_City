@@ -2,21 +2,10 @@ import { useEffect } from "react";
 import { MapContainer, Marker, useMap } from "react-leaflet";
 import L from "leaflet";
 import { DHAKA_BOUNDS, DHAKA_CENTER, DHAKA_ZOOM } from "../config/dhakaMap.js";
-import { MAP_MARKER_COLORS } from "../config/reportStatus.js";
+import { getAdminMapMarkerColor } from "../config/reportStatus.js";
 import { statusTriangleIcon } from "../lib/leafletIcons.js";
 import MapHoverInspector from "./MapHoverInspector.jsx";
 import MapTileLayer from "./MapTileLayer.jsx";
-
-function getMapMarkerColor(report) {
-  // Prioritize status: if resolved, show green regardless of crew status
-  if (report.status === "resolved") {
-    return MAP_MARKER_COLORS.resolved;
-  }
-  if (report.crewStatus === "awaiting_approval") {
-    return "#ea580c";
-  }
-  return MAP_MARKER_COLORS[report.status] || MAP_MARKER_COLORS.open;
-}
 
 function FitReportBounds({ reports }) {
   const map = useMap();
@@ -56,7 +45,7 @@ export default function AdminStatusMap({ reports, height = "360px", className = 
         <MapHoverInspector />
         <FitReportBounds reports={reports} />
         {reports.map((report) => {
-          const color = getMapMarkerColor(report);
+          const color = getAdminMapMarkerColor(report);
           return (
             <Marker
               key={report._id}

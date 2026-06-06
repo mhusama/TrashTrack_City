@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { crewApi } from "../api/client.js";
 import { crewStatusLabelForReport } from "../config/crewStatus.js";
+import { hasPendingAdminApproval, STATUS_TABLE_STYLES } from "../config/reportStatus.js";
 
 export default function CrewTaskReportsTable({
   reports,
@@ -105,11 +106,11 @@ export default function CrewTaskReportsTable({
   const vehicleButtonState = (vehicle) => {
     const reg = vehicle.registrationNumber;
     const exId = vehicle.exclusiveReportId;
-    const exStatus = vehicle.exclusiveCrewStatus;
+    const exReportStatus = vehicle.exclusiveReportStatus;
 
-    const foreignDisposal =
+    const foreignUnderReview =
       exId &&
-      exStatus === "disposal_in_progress" &&
+      exReportStatus === "in_progress" &&
       (selectedReportId == null || String(exId) !== String(selectedReportId));
 
     const mineOnSelected =
@@ -120,7 +121,7 @@ export default function CrewTaskReportsTable({
     const disposalOwn =
       mineOnSelected && selectedReport.crewStatus === "disposal_in_progress";
 
-    if (foreignDisposal || disposalOwn) {
+    if (foreignUnderReview || disposalOwn) {
       return { tone: "red", label: "Not Available", disabled: true };
     }
     if (mineOnSelected) {
@@ -167,14 +168,22 @@ export default function CrewTaskReportsTable({
             </tr>
           </thead>
           <tbody>
-            {reports.map((report) => (
+            {reports.map((report) => {
+              const pendingApproval = hasPendingAdminApproval(report);
+              const pendingStyle = STATUS_TABLE_STYLES.awaiting_approval;
+              const rowSelected =
+                enableLeaderTransport && String(report._id) === String(selectedReportId);
+              return (
               <tr
                 key={report._id}
-                className={`border-b border-theme-border ${
-                  enableLeaderTransport && String(report._id) === String(selectedReportId)
-                    ? "bg-amber-50/80"
-                    : ""
-                }`}
+                className="border-b border-theme-border"
+                style={
+                  pendingApproval
+                    ? { backgroundColor: pendingStyle.rowBg }
+                    : rowSelected
+                      ? { backgroundColor: "#fffbeb" }
+                      : undefined
+                }
               >
                 <td className="px-4 py-3 font-mono text-xs text-black">
                   {report.reportedBy?.residentId || "—"}
@@ -228,11 +237,16 @@ export default function CrewTaskReportsTable({
                     )}
                   </td>
                 )}
-                <td className="px-4 py-3 font-semibold">
+                <td
+                  className={`px-4 py-3 font-semibold ${
+                    pendingApproval ? pendingStyle.textClass : ""
+                  }`}
+                >
                   {crewStatusLabelForReport(report)}
                 </td>
               </tr>
-            ))}
+            );
+            })}
           </tbody>
         </table>
       </div>

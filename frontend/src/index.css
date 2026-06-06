@@ -1046,3 +1046,51 @@ body {
   color: #6b0f1a;
   font-weight: 600;
 }
+
+/* Landing homepage hero slideshow — full-width banner, light pink letterbox */
+.landing-hero-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100vw;
+  max-width: 100vw;
+  height: 40.5rem;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+  background-color: #fce1ee;
+}
+
+.landing-hero-banner__img {
+  display: block;
+  width: calc(100% - 0.5rem);
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+  image-rendering: auto;
+}
+
+@media (max-width: 640px) {
+  .landing-hero-banner {
+    height: 20.5rem;
+  }
+}
+
+.landing-hero-cta-row {
+  margin-top: 0.25rem;
+}
+
+.landing-hero-cta {
+  border-style: dashed;
+  border-width: 2px;
+  padding: 1.5rem 3rem;
+  font-size: 1.625rem;
+  font-weight: 600;
+  min-width: 11.5rem;
+  text-align: center;
+}
+
+.landing-hero-cta:hover {
+  border-style: dashed;
+}

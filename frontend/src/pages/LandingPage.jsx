@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { MapPin, Shield, Zap } from "lucide-react";
+import LandingHeroBanner from "../components/LandingHeroBanner.jsx";
 
 const features = [
   {
@@ -22,7 +23,8 @@ const features = [
 
 export default function LandingPage() {
   return (
-    <div className="space-y-16 py-8 text-center text-black">
+    <div className="space-y-16 pb-8 pt-0 text-center text-black">
+      <LandingHeroBanner />
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
@@ -34,14 +36,14 @@ export default function LandingPage() {
         <p className="mx-auto max-w-xl text-lg text-black">
           TrashTrack City helps you report and track waste issues across Dhaka.
         </p>
-        <div className="flex flex-wrap justify-center gap-3">
-          <Link to="/register" className="guest-cta-btn px-6 py-3">
+        <div className="landing-hero-cta-row flex flex-wrap justify-center gap-4">
+          <Link to="/register" className="guest-cta-btn landing-hero-cta">
             Get started
           </Link>
-          <Link to="/login" className="guest-cta-btn px-6 py-3">
+          <Link to="/login" className="guest-cta-btn landing-hero-cta">
             Sign in
           </Link>
-          <Link to="/contact" className="guest-cta-btn px-6 py-3">
+          <Link to="/contact" className="guest-cta-btn landing-hero-cta">
             Contact us
           </Link>
         </div>
@@ -57,8 +59,8 @@ export default function LandingPage() {
             className="card p-6"
           >
             <Icon className="mb-3 h-8 w-8 text-[#6b0f1a]" />
-            <h3 className="font-semibold text-[#6b0f1a]">{title}</h3>
-            <p className="mt-2 text-sm text-black">{text}</p>
+            <h3 className="text-lg font-semibold text-[#6b0f1a]">{title}</h3>
+            <p className="mt-2 text-lg text-black">{text}</p>
           </motion.div>
         ))}
       </div>

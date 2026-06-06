@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Camera, MapPin, Shield, Sparkles } from "lucide-react";
+import LandingHeroBanner from "../components/LandingHeroBanner.jsx";
 
 const features = [
   {
@@ -23,7 +24,8 @@ const features = [
 export default function MobileGuestPage() {
   return (
     <div className="mobile-guest-page -mx-4 -mt-4 text-black">
-      <section className="mobile-guest-hero px-4 pb-8 pt-6">
+      <section className="mobile-guest-hero px-4 pb-8 pt-0">
+        <LandingHeroBanner />
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}

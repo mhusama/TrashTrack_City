@@ -6,11 +6,18 @@ export const ADMIN_STATUS_LABELS = {
   all: "All statuses",
   open: "PENDING",
   in_progress: "UNDER REVIEW",
+  awaiting_approval: "PENDING APPROVAL",
   resolved: "RESOLVED",
   rejected: "REJECTED",
 };
 
-const STATUS_OPTIONS = ["open", "in_progress", "resolved", "rejected"];
+const STATUS_OPTIONS = [
+  "open",
+  "in_progress",
+  "awaiting_approval",
+  "resolved",
+  "rejected",
+];
 
 const SORT_ORDER_LABELS = {
   newest: "Newest",

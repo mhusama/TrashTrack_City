@@ -27,11 +27,25 @@ export const STATUS_TABLE_STYLES = {
     textClass: "font-bold text-blue-600",
   },
   awaiting_approval: {
-    label: "UNDER REVIEW",
+    label: "PENDING APPROVAL",
     rowBg: "#fed7aa",
-    textClass: "font-bold text-orange-600",
+    textClass: "font-bold text-orange-700",
   },
 };
+
+/** Team leader submitted an updated task report and it awaits admin sign-off. */
+export function hasPendingAdminApproval(report) {
+  return (
+    report.crewStatus === "awaiting_approval" &&
+    Boolean(report.updatedTaskReport?.submittedAt)
+  );
+}
+
+/** Admin table: pending approval only after updated task report submission. */
+export function adminTableStatusKey(report) {
+  if (hasPendingAdminApproval(report)) return "awaiting_approval";
+  return report.status;
+}
 
 export const STATUS_SORT_ORDER = {
   open: 0,
@@ -45,8 +59,19 @@ export const MAP_MARKER_COLORS = {
   in_progress: "#ca8a04",
   resolved: "#16a34a",
   rejected: "#2563eb",
-  awaiting_approval: "#ea580c",
+  awaiting_approval: "#f97316",
 };
+
+/** Admin map triangle colour — orange when updated task report awaits approval. */
+export function getAdminMapMarkerColor(report) {
+  if (report.status === "resolved") {
+    return MAP_MARKER_COLORS.resolved;
+  }
+  if (hasPendingAdminApproval(report)) {
+    return MAP_MARKER_COLORS.awaiting_approval;
+  }
+  return MAP_MARKER_COLORS[report.status] || MAP_MARKER_COLORS.open;
+}
 
 export function sortReportsByResidentThenDate(reports) {
   return [...reports].sort((a, b) => {

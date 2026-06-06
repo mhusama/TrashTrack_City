@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { inferReportArea } from "../config/dhakaAreas.js";
-import { STATUS_TABLE_STYLES } from "../config/reportStatus.js";
+import { STATUS_TABLE_STYLES, adminTableStatusKey } from "../config/reportStatus.js";
 
 export default function AdminReportsTable({ reports }) {
   return (
@@ -19,7 +19,8 @@ export default function AdminReportsTable({ reports }) {
         </thead>
         <tbody>
           {reports.map((report) => {
-            const style = STATUS_TABLE_STYLES[report.status] || STATUS_TABLE_STYLES.open;
+            const statusKey = adminTableStatusKey(report);
+            const style = STATUS_TABLE_STYLES[statusKey] || STATUS_TABLE_STYLES.open;
             const residentId = report.reportedBy?.residentId || "—";
             const assigned =
               report.assignedTeamDisplay ||

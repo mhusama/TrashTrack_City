@@ -4,8 +4,13 @@ import { getUserModel } from "../models/User.js";
 import { resolveTeamDisplayName } from "../services/teamRegistryService.js";
 import { notifyAdminsAboutReview } from "../utils/notifications.js";
 
-/** Vehicle is reserved while a report holds it during active crew work (before admin approval). */
-const TRANSPORT_HOLD_STATUSES = ["assigned", "disposal_in_progress"];
+/** Vehicle stays reserved while assigned to a report that is still Under Review (in_progress). */
+function transportHoldFilter() {
+  return {
+    assignedTransportRegistration: { $nin: [null, ""] },
+    status: "in_progress",
+  };
+}
 
 function ensureCrewUser(req, res) {
   if (req.user.role !== "cleaning_crew") {
@@ -214,7 +219,7 @@ export async function unsubmitUpdatedTaskReport(req, res) {
 }
 
 /**
- * Fleet list + which units are currently held by any team (assigned / disposal in progress).
+ * Fleet list + which units are held while their task report is Under Review (in_progress).
  */
 export async function listVehiclesWithAvailability(req, res) {
   try {
@@ -224,11 +229,8 @@ export async function listVehiclesWithAvailability(req, res) {
     }
 
     const vehicles = await Vehicle.find({}).sort({ no: 1 }).lean();
-    const held = await Report.find({
-      assignedTransportRegistration: { $nin: [null, ""] },
-      crewStatus: { $in: TRANSPORT_HOLD_STATUSES },
-    })
-      .select("_id assignedTransportRegistration assignedTeam crewStatus")
+    const held = await Report.find(transportHoldFilter())
+      .select("_id assignedTransportRegistration assignedTeam crewStatus status")
       .lean();
 
     const regToHolder = new Map();
@@ -240,6 +242,7 @@ export async function listVehiclesWithAvailability(req, res) {
           reportId: String(r._id),
           teamName: r.assignedTeam,
           crewStatus: r.crewStatus,
+          reportStatus: r.status,
         });
       }
     }
@@ -255,6 +258,7 @@ export async function listVehiclesWithAvailability(req, res) {
         exclusiveReportId: ex?.reportId ?? null,
         exclusiveTeamName: ex?.teamName ?? null,
         exclusiveCrewStatus: ex?.crewStatus ?? null,
+        exclusiveReportStatus: ex?.reportStatus ?? null,
       };
     });
 
@@ -304,8 +308,8 @@ export async function setReportTransport(req, res) {
     }
 
     const conflict = await Report.findOne({
+      ...transportHoldFilter(),
       assignedTransportRegistration: reg,
-      crewStatus: { $in: TRANSPORT_HOLD_STATUSES },
       _id: { $ne: report._id },
     }).select("_id assignedTeam");
 

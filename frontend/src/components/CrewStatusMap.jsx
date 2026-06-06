@@ -2,17 +2,10 @@ import { useEffect } from "react";
 import { MapContainer, Marker, useMap } from "react-leaflet";
 import L from "leaflet";
 import { DHAKA_BOUNDS, DHAKA_CENTER, DHAKA_ZOOM } from "../config/dhakaMap.js";
-import { CREW_MAP_MARKER_COLORS } from "../config/crewStatus.js";
+import { crewMapMarkerColorForReport } from "../config/crewStatus.js";
 import { statusTriangleIcon } from "../lib/leafletIcons.js";
 import MapHoverInspector from "./MapHoverInspector.jsx";
 import MapTileLayer from "./MapTileLayer.jsx";
-function getCrewMapMarkerColor(report) {
-  // Prioritize status: if resolved, show green regardless of crew status
-  if (report.status === "resolved") {
-    return CREW_MAP_MARKER_COLORS.approved;
-  }
-  return CREW_MAP_MARKER_COLORS[report.crewStatus] || CREW_MAP_MARKER_COLORS.assigned;
-}
 
 
 function FitReportBounds({ reports }) {
@@ -53,7 +46,7 @@ export default function CrewStatusMap({ reports, height = "70vh", className = ""
         <MapHoverInspector />
         <FitReportBounds reports={reports} />
         {reports.map((report) => {
-          const color = getCrewMapMarkerColor(report);
+          const color = crewMapMarkerColorForReport(report);
           return (
             <Marker
               key={report._id}
