@@ -20,7 +20,7 @@ function staffRoles(user) {
   return user.role === "admin" || user.role === "cleaning_crew";
 }
 
-const EDITABLE_STATUSES = ["open", "in_progress"];
+const EDITABLE_STATUSES = ["open"];
 
 function assertResidentCanModifyReport(report, user) {
   if (user.role !== "resident") {
@@ -33,7 +33,7 @@ function assertResidentCanModifyReport(report, user) {
     return {
       ok: false,
       status: 400,
-      message: "Report cannot be changed after it is resolved or rejected",
+      message: "Report cannot be edited while it is under review, approved, or rejected",
     };
   }
   return { ok: true };
@@ -107,6 +107,12 @@ export async function getReport(req, res) {
     }
 
     const o = report.toObject();
+    o.updatedTaskReport = {
+      description: report.updatedTaskReport?.description ?? "",
+      imageUrl: report.updatedTaskReport?.imageUrl ?? "",
+      updateDate: report.updatedTaskReport?.updateDate ?? "",
+      submittedAt: report.updatedTaskReport?.submittedAt ?? null,
+    };
     const hasAssignment =
       o.assignedTeam &&
       o.crewStatus &&
@@ -263,12 +269,6 @@ export async function updateReportStatus(req, res) {
       updates.approvalRemark = "not_approved";
       updates.assignedTransportRegistration = "";
       updates.assignedTransportLabel = "";
-      updates.updatedTaskReport = {
-        description: "",
-        imageUrl: "",
-        updateDate: "",
-        submittedAt: null,
-      };
     }
 
     const report = await Report.findById(req.params.id);
@@ -313,41 +313,84 @@ export async function updateReportStatus(req, res) {
 
 export async function updateReport(req, res) {
   try {
-    const isAdmin = req.user.role === "admin";
-    const isResident = req.user.role === "resident";
-
-    if (!isAdmin && !isResident) {
-      return res.status(403).json({ message: "Access denied" });
+    if (req.user.role !== "resident") {
+      return res.status(403).json({ message: "Only residents can edit reports here" });
     }
-
-    if (isResident) {
-      await assertResidentNotBlocked(req.user._id);
-    }
+    await assertResidentNotBlocked(req.user._id);
 
     const report = await Report.findById(req.params.id);
     if (!report) {
       return res.status(404).json({ message: "Report not found" });
     }
 
-    if (isResident && report.reportedBy.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: "Access denied" });
+    const access = assertResidentCanModifyReport(report, req.user);
+    if (!access.ok) {
+      return res.status(access.status).json({ message: access.message });
     }
 
-    if (!req.file) {
-      return res.status(400).json({ message: "A new photo is required" });
+    const {
+      title,
+      description,
+      category,
+      subcategory,
+      lat,
+      lng,
+      address,
+      nearbyLandmark,
+      smellRisk,
+      wasteSpreadArea,
+      sensitiveLocations,
+    } = req.body;
+
+    if (!title || lat === undefined || lng === undefined) {
+      return res.status(400).json({
+        message: "Title and location (lat, lng) are required",
+      });
+    }
+    if (!category) {
+      return res.status(400).json({ message: "Category is required" });
     }
 
-    const originalCreatedAt = report.createdAt;
-    report.photoUrl = `/uploads/${req.file.filename}`;
+    if (smellRisk && !VALID_SMELL_RISK.includes(smellRisk)) {
+      return res.status(400).json({ message: "Invalid smell/health risk selection" });
+    }
+    if (wasteSpreadArea && !VALID_WASTE_SPREAD.includes(wasteSpreadArea)) {
+      return res.status(400).json({ message: "Invalid waste spread area selection" });
+    }
+
+    const parsedSensitiveLocations = parseSensitiveLocations(sensitiveLocations).filter((value) =>
+      VALID_SENSITIVE.includes(value)
+    );
+
+    const latitude = Number(lat);
+    const longitude = Number(lng);
+    if (!isWithinDhakaBounds(latitude, longitude)) {
+      return res.status(400).json({
+        message: "Location must be within Dhaka city",
+      });
+    }
+
+    report.title = title;
+    report.description = description || "";
+    report.category = category;
+    report.subcategory = subcategory || "";
+    report.smellRisk = smellRisk || "";
+    report.wasteSpreadArea = wasteSpreadArea || "";
+    report.sensitiveLocations = parsedSensitiveLocations;
+    report.area = inferAreaFromText(`${address || ""} ${nearbyLandmark || ""}`);
+    report.location = {
+      lat: latitude,
+      lng: longitude,
+      address: address || "",
+      nearbyLandmark: nearbyLandmark || "",
+    };
+
+    if (req.file) {
+      report.photoUrl = `/uploads/${req.file.filename}`;
+    }
+
+    report.createdAt = new Date();
     await report.save();
-
-    if (originalCreatedAt && report.createdAt?.getTime() !== originalCreatedAt.getTime()) {
-      await Report.collection.updateOne(
-        { _id: report._id },
-        { $set: { createdAt: originalCreatedAt } }
-      );
-      report.createdAt = originalCreatedAt;
-    }
     await report.populate("reportedBy", "name email phone residentId");
 
     const out = report.toObject();

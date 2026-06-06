@@ -7,6 +7,7 @@ import { teamsApi } from "../api/client.js";
 const FILTER_OPTIONS = [
   { value: "pending", label: "Pending" },
   { value: "approved", label: "Approved" },
+  { value: "rejected", label: "Rejected" },
 ];
 
 function StatusFilterDropdown({ filterMode, onFilterChange }) {
@@ -78,7 +79,9 @@ export default function AdminPendingApprovalsTable() {
   const emptyMessage =
     filterMode === "approved"
       ? "No approved updated task reports."
-      : "No pending updated task reports.";
+      : filterMode === "rejected"
+        ? "No rejected reports with updated task reports."
+        : "No pending updated task reports.";
 
   return (
     <div className="space-y-4">
@@ -120,6 +123,8 @@ export default function AdminPendingApprovalsTable() {
                   <td className="px-4 py-3 font-semibold">
                     {row.remarks === "Approved" ? (
                       <span className="text-green-600">Approved</span>
+                    ) : row.remarks === "Rejected" ? (
+                      <span className="text-blue-600">Rejected</span>
                     ) : (
                       <span className="text-red-600">Not Approved</span>
                     )}

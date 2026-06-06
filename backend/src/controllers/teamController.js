@@ -309,6 +309,12 @@ export async function assignReportToTeam(req, res) {
       return res.status(404).json({ message: "Report not found" });
     }
 
+    if (report.status === "resolved" || report.status === "rejected") {
+      return res.status(400).json({
+        message: "Cannot assign teams to approved or rejected reports",
+      });
+    }
+
     const previousTeam = report.assignedTeam;
     const isActiveAssignment = isActiveTeamAssignment(report);
 
@@ -368,20 +374,29 @@ export async function assignReportToTeam(req, res) {
 
 export async function listPendingApprovals(req, res) {
   try {
-    const filterType = req.query.filter === "approved" ? "approved" : "pending";
+    const filterType = ["approved", "rejected", "pending"].includes(req.query.filter)
+      ? req.query.filter
+      : "pending";
+
+    const hasUpdatedTask = { "updatedTaskReport.submittedAt": { $ne: null } };
 
     const query =
       filterType === "approved"
         ? {
             approvalRemark: "approved",
             status: "resolved",
-            "updatedTaskReport.submittedAt": { $ne: null },
+            ...hasUpdatedTask,
           }
-        : {
-            crewStatus: "awaiting_approval",
-            status: { $nin: ["resolved", "rejected"] },
-            "updatedTaskReport.submittedAt": { $ne: null },
-          };
+        : filterType === "rejected"
+          ? {
+              status: "rejected",
+              ...hasUpdatedTask,
+            }
+          : {
+              crewStatus: "awaiting_approval",
+              status: { $nin: ["resolved", "rejected"] },
+              ...hasUpdatedTask,
+            };
 
     const reports = await Report.find(query)
       .populate("reportedBy", "name email phone residentId")
@@ -392,16 +407,70 @@ export async function listPendingApprovals(req, res) {
         _id: report._id,
         reportId: report.reportId,
         title: report.title,
-        teamName: report.assignedTeam,
-        teamLeader: await getTeamLeaderName(report.assignedTeam),
+        teamName: report.assignedTeam || "—",
+        teamLeader: report.assignedTeam
+          ? await getTeamLeaderName(report.assignedTeam)
+          : "—",
         remarks:
-          report.approvalRemark === "approved" ? "Approved" : "Not Approved",
+          report.status === "rejected"
+            ? "Rejected"
+            : report.approvalRemark === "approved"
+              ? "Approved"
+              : "Not Approved",
         approvalRemark: report.approvalRemark,
+        status: report.status,
         createdAt: report.createdAt,
       }))
     );
 
     res.json({ reports: rows, filter: filterType });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+}
+
+function formatUpdatedTaskDate(date = new Date()) {
+  return date.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
+export async function writeRejectedUpdatedTaskReport(req, res) {
+  try {
+    const { description } = req.body;
+    if (!description?.trim()) {
+      return res.status(400).json({ message: "Description is required" });
+    }
+
+    const report = await Report.findById(req.params.id);
+    if (!report) {
+      return res.status(404).json({ message: "Report not found" });
+    }
+
+    if (report.status !== "rejected") {
+      return res.status(400).json({
+        message: "Updated task reports can only be written for rejected reports",
+      });
+    }
+
+    const existing = report.updatedTaskReport || {};
+    const isFirstWrite = !existing.submittedAt;
+
+    report.updatedTaskReport = {
+      description: description.trim(),
+      imageUrl: req.file
+        ? `/uploads/${req.file.filename}`
+        : existing.imageUrl || "",
+      updateDate: isFirstWrite ? formatUpdatedTaskDate() : existing.updateDate || "",
+      submittedAt: isFirstWrite ? new Date() : existing.submittedAt,
+    };
+
+    await report.save();
+    await report.populate("reportedBy", "name email phone residentId");
+
+    res.json({ report });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -462,12 +531,6 @@ export async function approveReport(req, res) {
       report.crewStatus = "unassigned";
       report.assignedTransportRegistration = "";
       report.assignedTransportLabel = "";
-      report.updatedTaskReport = {
-        description: "",
-        imageUrl: "",
-        updateDate: "",
-        submittedAt: null,
-      };
     } else {
       report.approvalRemark = "not_approved";
     }

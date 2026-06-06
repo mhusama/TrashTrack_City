@@ -63,6 +63,8 @@ export const teamsApi = {
     api.patch(`/api/teams/reports/${reportId}/approval`, { approval }),
   updateUpdatedTaskReportImage: (reportId, formData) =>
     api.patch(`/api/teams/reports/${reportId}/updated-task-image`, formData),
+  writeRejectedUpdatedTaskReport: (reportId, formData) =>
+    api.post(`/api/teams/reports/${reportId}/rejected-updated-task`, formData),
   locations: () => api.get("/api/teams/locations"),
   updateLocation: (id, data) => api.patch(`/api/teams/locations/${id}`, data),
 };

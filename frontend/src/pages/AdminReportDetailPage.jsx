@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
-import { reportsApi, teamsApi } from "../api/client.js";
+import { reportsApi } from "../api/client.js";
 import { inferReportArea } from "../config/dhakaAreas.js";
 import {
   formatSensitiveLocations,
@@ -13,6 +13,7 @@ import { formatReportCategory } from "../config/reportCategories.js";
 import { REPORT_STATUS_OPTIONS, STATUS_TABLE_STYLES } from "../config/reportStatus.js";
 import AdminAssignTeamTable from "../components/AdminAssignTeamTable.jsx";
 import { mediaUrl } from "../utils/mediaUrl.js";
+import { shouldShowUpdatedTaskReportSection } from "../utils/updatedTaskReport.js";
 
 export default function AdminReportDetailPage() {
   const { id } = useParams();
@@ -22,10 +23,6 @@ export default function AdminReportDetailPage() {
   const [statusOpen, setStatusOpen] = useState(false);
   const [teamTableOpen, setTeamTableOpen] = useState(false);
   const [updating, setUpdating] = useState(false);
-  const [reportPhotoFile, setReportPhotoFile] = useState(null);
-  const [reportPhotoUpdating, setReportPhotoUpdating] = useState(false);
-  const [taskImageFile, setTaskImageFile] = useState(null);
-  const [taskImageUpdating, setTaskImageUpdating] = useState(false);
 
   useEffect(() => {
     reportsApi
@@ -34,50 +31,6 @@ export default function AdminReportDetailPage() {
       .catch(() => toast.error("Report not found"))
       .finally(() => setLoading(false));
   }, [id]);
-
-  const handleReportPhotoChange = async (e) => {
-    e.preventDefault();
-    if (!reportPhotoFile) {
-      toast.error("Please choose an image");
-      return;
-    }
-
-    setReportPhotoUpdating(true);
-    try {
-      const fd = new FormData();
-      fd.append("photo", reportPhotoFile);
-      const res = await reportsApi.update(id, fd);
-      setReport(res.data.report);
-      setReportPhotoFile(null);
-      toast.success("Report photo updated");
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Could not update report photo");
-    } finally {
-      setReportPhotoUpdating(false);
-    }
-  };
-
-  const handleUpdatedTaskImageChange = async (e) => {
-    e.preventDefault();
-    if (!taskImageFile) {
-      toast.error("Please choose an image");
-      return;
-    }
-
-    setTaskImageUpdating(true);
-    try {
-      const fd = new FormData();
-      fd.append("image", taskImageFile);
-      const res = await teamsApi.updateUpdatedTaskReportImage(id, fd);
-      setReport(res.data.report);
-      setTaskImageFile(null);
-      toast.success("Updated task report image saved");
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Could not update image");
-    } finally {
-      setTaskImageUpdating(false);
-    }
-  };
 
   const handleStatusChange = async (status) => {
     setUpdating(true);
@@ -110,10 +63,11 @@ export default function AdminReportDetailPage() {
 
   const resident = report.reportedBy;
   const statusStyle = STATUS_TABLE_STYLES[report.status] || STATUS_TABLE_STYLES.open;
+  const canAssignTeam = report.status !== "resolved" && report.status !== "rejected";
   const isAssignedToTeam =
+    canAssignTeam &&
     Boolean(report.assignedTeam?.trim()) &&
-    report.crewStatus !== "unassigned" &&
-    report.status !== "rejected";
+    report.crewStatus !== "unassigned";
   const canFinishAssigning = isAssignedToTeam && report.status === "open";
 
   const handleFinishAssigning = async () => {
@@ -219,73 +173,34 @@ export default function AdminReportDetailPage() {
           </div>
         )}
 
-        {report.photoUrl ? (
+        {report.photoUrl && (
           <img
             src={mediaUrl(report.photoUrl)}
             alt="Report"
             className="mt-4 max-h-64 rounded-lg border border-theme-border object-cover"
           />
-        ) : (
-          <p className="mt-4 text-sm text-black/70">No photo on this report.</p>
         )}
-        <form onSubmit={handleReportPhotoChange} className="mt-4 max-w-md space-y-3">
-          <label className="block space-y-1">
-            <span className="label-text">Replace report photo</span>
-            <input
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              onChange={(e) => setReportPhotoFile(e.target.files?.[0] || null)}
-              className="input-field py-2"
-            />
-          </label>
-          <p className="text-xs text-black/70">
-            Only the photo is updated. Issued date and all other report details stay unchanged.
-          </p>
-          <button
-            type="submit"
-            disabled={reportPhotoUpdating || !reportPhotoFile}
-            className="btn-outline px-6 py-2 text-sm"
-          >
-            {reportPhotoUpdating ? "Saving…" : "Save report photo"}
-          </button>
-        </form>
       </section>
 
-      {report.updatedTaskReport?.submittedAt && (
+      {shouldShowUpdatedTaskReportSection(report) && (
         <section className="card p-6">
           <h2 className="mb-4 text-lg font-semibold text-black">Updated Task Report</h2>
-          <p className="label-text">Description</p>
-          <p className="mt-1 text-black">{report.updatedTaskReport.description}</p>
-          {report.updatedTaskReport.imageUrl && (
+          {report.updatedTaskReport?.description ? (
+            <>
+              <p className="label-text">Description</p>
+              <p className="mt-1 text-black">{report.updatedTaskReport.description}</p>
+            </>
+          ) : (
+            <p className="text-sm text-black/70">No description provided.</p>
+          )}
+          {report.updatedTaskReport?.imageUrl && (
             <img
               src={mediaUrl(report.updatedTaskReport.imageUrl)}
               alt="Updated task"
               className="mt-4 max-h-64 rounded-lg border border-theme-border object-cover"
             />
           )}
-          <form onSubmit={handleUpdatedTaskImageChange} className="mt-4 max-w-md space-y-3">
-            <label className="block space-y-1">
-              <span className="label-text">Replace updated task image</span>
-              <input
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                onChange={(e) => setTaskImageFile(e.target.files?.[0] || null)}
-                className="input-field py-2"
-              />
-            </label>
-            <p className="text-xs text-black/70">
-              Only the image is updated. Description, update date, and all other details stay
-              unchanged.
-            </p>
-            <button
-              type="submit"
-              disabled={taskImageUpdating || !taskImageFile}
-              className="btn-outline px-6 py-2 text-sm"
-            >
-              {taskImageUpdating ? "Saving…" : "Save task image"}
-            </button>
-          </form>
-          {report.updatedTaskReport.updateDate && (
+          {report.updatedTaskReport?.updateDate && (
             <p className="mt-3 text-sm text-black">
               <span className="font-medium">Update date:</span>{" "}
               {report.updatedTaskReport.updateDate}
@@ -295,61 +210,64 @@ export default function AdminReportDetailPage() {
       )}
 
       <section className="card p-6">
-        <div className="flex flex-wrap items-center gap-3">
-          <span className="text-base font-bold text-black">Assign</span>
-          <button
-            type="button"
-            onClick={() => setTeamTableOpen((v) => !v)}
-            className="btn-primary px-6 py-2"
-          >
-            Team
-          </button>
-          <button
-            type="button"
-            disabled={!canFinishAssigning || updating}
-            onClick={handleFinishAssigning}
-            className="btn-primary px-6 py-2 disabled:cursor-not-allowed disabled:opacity-50"
-            title={
-              canFinishAssigning
-                ? "Mark this report as Under Review"
-                : isAssignedToTeam
-                  ? "Report is already past the assigning stage"
-                  : "Assign this report to a team first"
-            }
-          >
-            {updating ? "Saving…" : "Finish Assigning"}
-          </button>
-        </div>
-        <p className="mt-2 text-sm text-black">
-          {report.assignedTeam &&
-          report.crewStatus &&
-          report.crewStatus !== "unassigned" &&
-          report.status !== "rejected" ? (
-            <>
-              Currently assigned to{" "}
-              <strong>{report.assignedTeamDisplay || report.assignedTeam}</strong>.
-            </>
-          ) : (
-            "This report has not been assigned to any team yet"
-          )}
-        </p>
-        {teamTableOpen && (
-          <div className="mt-4">
-            <AdminAssignTeamTable
-              reportId={report._id}
-              assignedTeam={
-                report.status === "rejected" || report.crewStatus === "unassigned"
-                  ? ""
-                  : report.assignedTeam
-              }
-              assignedTeamDisplay={
-                report.status === "rejected" || report.crewStatus === "unassigned"
-                  ? ""
-                  : report.assignedTeamDisplay || ""
-              }
-              onAssigned={(updated) => setReport(updated)}
-            />
-          </div>
+        {canAssignTeam ? (
+          <>
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="text-base font-bold text-black">Assign</span>
+              <button
+                type="button"
+                onClick={() => setTeamTableOpen((v) => !v)}
+                className="btn-primary px-6 py-2"
+              >
+                Team
+              </button>
+              <button
+                type="button"
+                disabled={!canFinishAssigning || updating}
+                onClick={handleFinishAssigning}
+                className="btn-primary px-6 py-2 disabled:cursor-not-allowed disabled:opacity-50"
+                title={
+                  canFinishAssigning
+                    ? "Mark this report as Under Review"
+                    : isAssignedToTeam
+                      ? "Report is already past the assigning stage"
+                      : "Assign this report to a team first"
+                }
+              >
+                {updating ? "Saving…" : "Finish Assigning"}
+              </button>
+            </div>
+            <p className="mt-2 text-sm text-black">
+              {isAssignedToTeam ? (
+                <>
+                  Currently assigned to{" "}
+                  <strong>{report.assignedTeamDisplay || report.assignedTeam}</strong>.
+                </>
+              ) : (
+                "This report has not been assigned to any team yet"
+              )}
+            </p>
+            {teamTableOpen && (
+              <div className="mt-4">
+                <AdminAssignTeamTable
+                  reportId={report._id}
+                  assignedTeam={report.assignedTeam}
+                  assignedTeamDisplay={report.assignedTeamDisplay || ""}
+                  onAssigned={(updated) => setReport(updated)}
+                />
+              </div>
+            )}
+          </>
+        ) : (
+          <p className="text-sm text-black">
+            Team assignment is not available for approved or rejected reports.
+            {report.assignedTeam && (
+              <>
+                {" "}
+                Last assigned team: <strong>{report.assignedTeam}</strong>.
+              </>
+            )}
+          </p>
         )}
       </section>
 

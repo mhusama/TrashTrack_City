@@ -87,13 +87,14 @@ export default function ResidentReportDetailPage() {
           {statusStyle.label}
         </p>
 
-        <ReportManageActions
-          reportId={report._id}
-          deleting={deleting}
-          onDelete={handleDelete}
-          canDelete={canModify}
-          className="mt-4 max-w-md"
-        />
+        {canModify && (
+          <ReportManageActions
+            reportId={report._id}
+            deleting={deleting}
+            onDelete={handleDelete}
+            className="mt-4 max-w-md"
+          />
+        )}
 
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
           <div>

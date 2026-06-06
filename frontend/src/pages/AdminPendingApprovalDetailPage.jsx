@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 import { reportsApi, teamsApi } from "../api/client.js";
 import { formatReportCategory } from "../config/reportCategories.js";
 import { mediaUrl } from "../utils/mediaUrl.js";
+import { shouldShowUpdatedTaskReportSection } from "../utils/updatedTaskReport.js";
 
 export default function AdminPendingApprovalDetailPage() {
   const { id } = useParams();
@@ -12,9 +13,6 @@ export default function AdminPendingApprovalDetailPage() {
   const [loading, setLoading] = useState(true);
   const [approvalOpen, setApprovalOpen] = useState(false);
   const [updating, setUpdating] = useState(false);
-  const [imageFile, setImageFile] = useState(null);
-  const [imageUpdating, setImageUpdating] = useState(false);
-
   useEffect(() => {
     reportsApi
       .get(id)
@@ -49,28 +47,6 @@ export default function AdminPendingApprovalDetailPage() {
       toast.error(err.response?.data?.message || "Could not update approval");
     } finally {
       setUpdating(false);
-    }
-  };
-
-  const handleUpdatedTaskImageChange = async (e) => {
-    e.preventDefault();
-    if (!imageFile) {
-      toast.error("Please choose an image");
-      return;
-    }
-
-    setImageUpdating(true);
-    try {
-      const fd = new FormData();
-      fd.append("image", imageFile);
-      const res = await teamsApi.updateUpdatedTaskReportImage(id, fd);
-      setReport(res.data.report);
-      setImageFile(null);
-      toast.success("Updated task report image saved");
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Could not update image");
-    } finally {
-      setImageUpdating(false);
     }
   };
 
@@ -135,7 +111,7 @@ export default function AdminPendingApprovalDetailPage() {
         )}
       </section>
 
-      {updated.submittedAt && (
+      {shouldShowUpdatedTaskReportSection(report) && (
         <section className="card p-6">
           <h2 className="mb-4 text-lg font-semibold">Updated Task Report (Team Leader)</h2>
           <p className="text-sm text-black">
@@ -151,28 +127,6 @@ export default function AdminPendingApprovalDetailPage() {
               className="mt-4 max-h-64 rounded-lg border object-cover"
             />
           )}
-          <form onSubmit={handleUpdatedTaskImageChange} className="mt-4 space-y-3">
-            <label className="block space-y-1">
-              <span className="label-text">Replace updated task image</span>
-              <input
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                onChange={(e) => setImageFile(e.target.files?.[0] || null)}
-                className="input-field py-2"
-              />
-            </label>
-            <p className="text-xs text-black/70">
-              Only the image is updated. Description, update date, and all other report details
-              stay unchanged.
-            </p>
-            <button
-              type="submit"
-              disabled={imageUpdating || !imageFile}
-              className="btn-outline px-6 py-2 text-sm"
-            >
-              {imageUpdating ? "Saving…" : "Save image"}
-            </button>
-          </form>
           <p className="mt-3 text-sm">
             <span className="font-medium">Update date:</span> {updated.updateDate}
           </p>
@@ -180,56 +134,65 @@ export default function AdminPendingApprovalDetailPage() {
       )}
 
       <section className="card p-6">
-        <div className="relative inline-block">
-          <span className="mr-3 font-bold text-black">Report Status</span>
-          <button
-            type="button"
-            disabled={updating}
-            onClick={() => setApprovalOpen((v) => !v)}
-            className="btn-primary px-6 py-3"
-          >
-            Approved
-          </button>
-          {approvalOpen && (
-            <div className="absolute bottom-full left-0 z-20 mb-2 min-w-[200px] rounded-lg border border-theme-border bg-white py-1 shadow-lg">
+        {report.status === "rejected" ? (
+          <p className="text-sm">
+            Report status:{" "}
+            <strong className="text-blue-600">{approvalRemarkLabel}</strong>
+          </p>
+        ) : (
+          <>
+            <div className="relative inline-block">
+              <span className="mr-3 font-bold text-black">Report Status</span>
               <button
                 type="button"
-                onClick={() => handleApproval("approved")}
-                className="block w-full px-4 py-2 text-left text-sm text-green-700 hover:bg-green-50"
+                disabled={updating}
+                onClick={() => setApprovalOpen((v) => !v)}
+                className="btn-primary px-6 py-3"
               >
                 Approved
               </button>
-              <button
-                type="button"
-                onClick={() => handleApproval("not_approved")}
-                className="block w-full px-4 py-2 text-left text-sm hover:bg-[#6b0f1a] hover:text-white"
-              >
-                Not Approved
-              </button>
-              <button
-                type="button"
-                onClick={() => handleApproval("rejected")}
-                className="block w-full px-4 py-2 text-left text-sm text-red-700 hover:bg-red-50"
-              >
-                Reject
-              </button>
+              {approvalOpen && (
+                <div className="absolute bottom-full left-0 z-20 mb-2 min-w-[200px] rounded-lg border border-theme-border bg-white py-1 shadow-lg">
+                  <button
+                    type="button"
+                    onClick={() => handleApproval("approved")}
+                    className="block w-full px-4 py-2 text-left text-sm text-green-700 hover:bg-green-50"
+                  >
+                    Approved
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleApproval("not_approved")}
+                    className="block w-full px-4 py-2 text-left text-sm hover:bg-[#6b0f1a] hover:text-white"
+                  >
+                    Not Approved
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleApproval("rejected")}
+                    className="block w-full px-4 py-2 text-left text-sm text-red-700 hover:bg-red-50"
+                  >
+                    Reject
+                  </button>
+                </div>
+              )}
             </div>
-          )}
-        </div>
-        <p className="mt-3 text-sm">
-          Current remark:{" "}
-          <strong
-            className={
-              approvalRemarkLabel === "Approved"
-                ? "text-green-600"
-                : approvalRemarkLabel === "Rejected"
-                  ? "text-red-600"
-                  : ""
-            }
-          >
-            {approvalRemarkLabel}
-          </strong>
-        </p>
+            <p className="mt-3 text-sm">
+              Current remark:{" "}
+              <strong
+                className={
+                  approvalRemarkLabel === "Approved"
+                    ? "text-green-600"
+                    : approvalRemarkLabel === "Rejected"
+                      ? "text-red-600"
+                      : ""
+                }
+              >
+                {approvalRemarkLabel}
+              </strong>
+            </p>
+          </>
+        )}
       </section>
     </motion.div>
   );

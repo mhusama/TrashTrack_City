@@ -10,6 +10,7 @@ import {
   getTeamsOverview,
   listPendingApprovals,
   updateUpdatedTaskReportImage,
+  writeRejectedUpdatedTaskReport,
 } from "../controllers/teamController.js";
 import { upload } from "../middleware/upload.js";
 import {
@@ -38,6 +39,11 @@ router.patch(
   "/reports/:id/updated-task-image",
   upload.single("image"),
   updateUpdatedTaskReportImage
+);
+router.post(
+  "/reports/:id/rejected-updated-task",
+  upload.single("image"),
+  writeRejectedUpdatedTaskReport
 );
 
 export default router;
