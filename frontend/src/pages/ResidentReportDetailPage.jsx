@@ -11,7 +11,7 @@ import {
 } from "../config/reportRiskFields.js";
 import { formatReportCategory } from "../config/reportCategories.js";
 import { STATUS_TABLE_STYLES } from "../config/reportStatus.js";
-import { mediaUrl } from "../utils/mediaUrl.js";
+import ReportPhoto from "../components/ReportPhoto.jsx";
 import { canResidentModifyReport } from "../utils/reportActions.js";
 import ReportManageActions from "../components/ReportManageActions.jsx";
 
@@ -157,13 +157,10 @@ export default function ResidentReportDetailPage() {
           </div>
         )}
 
-        {report.photoUrl && (
-          <img
-            src={mediaUrl(report.photoUrl)}
-            alt="Report"
-            className="mt-4 max-h-64 rounded-lg border border-theme-border object-cover"
-          />
-        )}
+        <ReportPhoto
+          src={report.photoUrl}
+          className="mt-4 max-h-64 w-full rounded-lg border border-theme-border object-cover"
+        />
       </section>
     </motion.div>
   );

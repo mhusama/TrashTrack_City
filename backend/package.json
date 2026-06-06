@@ -9,7 +9,8 @@
     "test:smtp": "node scripts/test-smtp.js",
     "backfill:user-ids": "node scripts/backfill-user-ids.js",
     "backfill:report-ids": "node scripts/backfill-report-ids.js",
-    "seed:vehicles": "node scripts/seed-vehicles.js"
+    "seed:vehicles": "node scripts/seed-vehicles.js",
+    "fix:report-photos": "node scripts/fix-report-photo-urls.js"
   },
   "type": "module",
   "keywords": [],

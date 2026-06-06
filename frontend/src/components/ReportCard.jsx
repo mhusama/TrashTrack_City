@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { MapPin, Clock, CheckCircle2, AlertCircle } from "lucide-react";
 import { formatReportCategory } from "../config/reportCategories.js";
 import { getDaysUnderReview, getResolvedTimestamp } from "../utils/reportFilters.js";
+import ReportPhoto from "./ReportPhoto.jsx";
 
 const statusStyles = {
   open: "border-theme-border bg-white text-black",
@@ -88,13 +89,7 @@ export default function ReportCard({
         </span>
       </div>
 
-      {report.photoUrl && (
-        <img
-          src={report.photoUrl}
-          alt=""
-          className="mt-3 h-32 w-full rounded-lg border border-theme-border object-cover"
-        />
-      )}
+      <ReportPhoto src={report.photoUrl} />
 
       {isAdmin && report.status !== "resolved" && (
         <div className="mt-3 flex gap-2">
