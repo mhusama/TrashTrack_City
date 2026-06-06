@@ -70,7 +70,7 @@ export default function TeamLeaderDashboardPage() {
           activeView={activeView}
           onViewChange={handleViewChange}
           teamLabel="Your Team"
-          showLeadershipChat
+          variant="team-leader"
         />
       )}
       <div className="admin-dashboard-main space-y-6">

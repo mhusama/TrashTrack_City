@@ -54,14 +54,13 @@ function MemberTableRow({ member, onSelect }) {
   );
 }
 
-export default function AdminTeamsTable() {
+export default function AdminTeamsTable({ addTeamOpen, onAddTeamOpenChange }) {
   const [teams, setTeams] = useState([]);
   const [loading, setLoading] = useState(true);
   const [membersTeam, setMembersTeam] = useState(null);
   const [members, setMembers] = useState([]);
   const [membersLoading, setMembersLoading] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [addTeamOpen, setAddTeamOpen] = useState(false);
   const [teamNo, setTeamNo] = useState("");
   const [teamName, setTeamName] = useState("");
   const [enrolling, setEnrolling] = useState(false);
@@ -146,7 +145,7 @@ export default function AdminTeamsTable() {
       toast.success("Team enrolled. It will appear last on the registration team list.");
       setTeamNo("");
       setTeamName("");
-      setAddTeamOpen(false);
+      onAddTeamOpenChange?.(false);
       load();
     } catch (err) {
       toast.error(err.response?.data?.message || "Could not enroll team");
@@ -159,6 +158,45 @@ export default function AdminTeamsTable() {
 
   return (
     <div className="space-y-4">
+      {addTeamOpen && (
+        <div className="rounded-xl border border-theme-border bg-white p-4">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="block space-y-1">
+              <span className="label-text">Team no.</span>
+              <input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={teamNo}
+                onChange={(e) => setTeamNo(e.target.value.replace(/[^\d]/g, ""))}
+                className="input-field"
+                placeholder="e.g. 16"
+              />
+            </label>
+            <label className="block space-y-1">
+              <span className="label-text">Team Name</span>
+              <input
+                type="text"
+                value={teamName}
+                onChange={(e) => setTeamName(e.target.value)}
+                className="input-field"
+                placeholder="Display name for the team"
+              />
+            </label>
+            <div className="sm:col-span-2 flex justify-end">
+              <button
+                type="button"
+                disabled={enrolling}
+                onClick={handleEnrollTeam}
+                className="guest-cta-btn px-6 py-2 text-sm"
+              >
+                {enrolling ? "Enrolling…" : "Enroll team"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="overflow-hidden rounded-xl border border-theme-border">
         <div className="overflow-x-auto">
           <table className="min-w-full border-collapse text-left text-sm">
@@ -235,52 +273,6 @@ export default function AdminTeamsTable() {
               ))}
             </tbody>
           </table>
-        </div>
-
-        <div className="border-t border-theme-border bg-white p-4">
-          <button
-            type="button"
-            onClick={() => setAddTeamOpen((v) => !v)}
-            className="guest-cta-btn px-4 py-2 text-sm"
-          >
-            {addTeamOpen ? "Hide Add A Team" : "Add A Team"}
-          </button>
-          {addTeamOpen && (
-            <div className="mt-3 grid gap-3 sm:grid-cols-2">
-              <label className="block space-y-1">
-                <span className="label-text">Team no.</span>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  value={teamNo}
-                  onChange={(e) => setTeamNo(e.target.value.replace(/[^\d]/g, ""))}
-                  className="input-field"
-                  placeholder="e.g. 16"
-                />
-              </label>
-              <label className="block space-y-1">
-                <span className="label-text">Team Name</span>
-                <input
-                  type="text"
-                  value={teamName}
-                  onChange={(e) => setTeamName(e.target.value)}
-                  className="input-field"
-                  placeholder="Display name for the team"
-                />
-              </label>
-              <div className="sm:col-span-2">
-                <button
-                  type="button"
-                  disabled={enrolling}
-                  onClick={handleEnrollTeam}
-                  className="guest-cta-btn w-full py-2 text-sm"
-                >
-                  {enrolling ? "Enrolling…" : "Enroll team"}
-                </button>
-              </div>
-            </div>
-          )}
         </div>
       </div>
 

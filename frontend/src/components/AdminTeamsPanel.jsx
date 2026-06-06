@@ -38,12 +38,31 @@ function TeamsViewToggle({ activeView, onChange }) {
 
 export default function AdminTeamsPanel() {
   const [activeView, setActiveView] = useState(VIEWS.statistics);
+  const [addTeamOpen, setAddTeamOpen] = useState(false);
+
+  const handleViewChange = (view) => {
+    setActiveView(view);
+    if (view !== VIEWS.statistics) {
+      setAddTeamOpen(false);
+    }
+  };
 
   return (
     <div className="space-y-4">
-      <TeamsViewToggle activeView={activeView} onChange={setActiveView} />
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <TeamsViewToggle activeView={activeView} onChange={handleViewChange} />
+        {activeView === VIEWS.statistics && (
+          <button
+            type="button"
+            onClick={() => setAddTeamOpen((open) => !open)}
+            className="guest-cta-btn shrink-0 px-4 py-2 text-sm"
+          >
+            {addTeamOpen ? "Hide Add A Team" : "Add A Team"}
+          </button>
+        )}
+      </div>
       {activeView === VIEWS.statistics ? (
-        <AdminTeamsTable />
+        <AdminTeamsTable addTeamOpen={addTeamOpen} onAddTeamOpenChange={setAddTeamOpen} />
       ) : (
         <AdminTeamLocationsTable />
       )}

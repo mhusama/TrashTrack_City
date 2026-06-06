@@ -2,14 +2,13 @@ import DashboardProfileLink from "./DashboardProfileLink.jsx";
 
 const RESIDENT_NAV_ITEMS = [
   { id: "dashboard", label: "Dashboard" },
-  { id: "map", label: "Map" },
-  { id: "reports", label: "My Reports" },
-  { id: "community-feed", label: "Community Feed" },
-  { id: "contact-us", label: "Contact Us" },
   { id: "new-report", label: "New Report" },
+  { id: "reports", label: "My Reports" },
+  { id: "map", label: "Map" },
+  { id: "community-feed", label: "Community Feed" },
+  { id: "statistics", label: "Statistics" },
+  { id: "contact-us", label: "Contact Us" },
 ];
-
-const STATISTICS_ITEM = { id: "statistics", label: "Statistics" };
 
 export default function ResidentSidebar({ activeView, onViewChange }) {
   return (
@@ -34,19 +33,6 @@ export default function ResidentSidebar({ activeView, onViewChange }) {
               </button>
             </li>
           ))}
-          <li>
-            <button
-              type="button"
-              onClick={() => onViewChange(STATISTICS_ITEM.id)}
-              className={`admin-sidebar-link w-full rounded-lg border px-3 py-2.5 text-left text-sm font-medium transition-colors ${
-                activeView === STATISTICS_ITEM.id
-                  ? "border-[#6b0f1a] bg-[#6b0f1a] text-white"
-                  : "border-[#fce1ee] text-black hover:bg-[#fce1ee]"
-              }`}
-            >
-              {STATISTICS_ITEM.label}
-            </button>
-          </li>
           <DashboardProfileLink />
         </ul>
       </nav>
