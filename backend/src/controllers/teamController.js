@@ -1,5 +1,6 @@
 import { Report } from "../models/Report.js";
 import { TeamLocation } from "../models/TeamLocation.js";
+import { getFileUrl } from "../utils/fileUrl.js";
 import { resolveReportArea } from "../utils/dhakaAreas.js";
 import { getUserModel } from "../models/User.js";
 import { MAX_TEAM_ASSIGNMENTS } from "../config/teams.js";
@@ -461,7 +462,7 @@ export async function writeRejectedUpdatedTaskReport(req, res) {
     report.updatedTaskReport = {
       description: description.trim(),
       imageUrl: req.file
-        ? `/uploads/${req.file.filename}`
+        ? getFileUrl(req.file)
         : existing.imageUrl || "",
       updateDate: isFirstWrite ? formatUpdatedTaskDate() : existing.updateDate || "",
       submittedAt: isFirstWrite ? new Date() : existing.submittedAt,
@@ -491,7 +492,7 @@ export async function updateUpdatedTaskReportImage(req, res) {
       return res.status(400).json({ message: "No updated task report to modify" });
     }
 
-    report.updatedTaskReport.imageUrl = `/uploads/${req.file.filename}`;
+    report.updatedTaskReport.imageUrl = getFileUrl(req.file);
     await report.save();
     await report.populate("reportedBy", "name email phone residentId");
 

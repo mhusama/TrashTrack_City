@@ -1,4 +1,5 @@
 import { Report } from "../models/Report.js";
+import { getFileUrl } from "../utils/fileUrl.js";
 import { FeedbackComment } from "../models/FeedbackComment.js";
 import { resolveTeamDisplayName } from "../services/teamRegistryService.js";
 
@@ -157,8 +158,8 @@ export async function listFeedComments(req, res) {
 export async function addFeedComment(req, res) {
   try {
     const { text, replyToCommentId, replyToReview } = req.body;
-    const imageUrl = req.files?.image?.[0] ? `/uploads/${req.files.image[0].filename}` : "";
-    const voiceUrl = req.files?.voice?.[0] ? `/uploads/${req.files.voice[0].filename}` : "";
+    const imageUrl = getFileUrl(req.files?.image?.[0]);
+    const voiceUrl = getFileUrl(req.files?.voice?.[0]);
 
     if (!text?.trim() && !imageUrl && !voiceUrl) {
       return res.status(400).json({ message: "Reply text, image, or voice is required" });

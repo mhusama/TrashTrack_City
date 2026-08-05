@@ -1,4 +1,5 @@
 import { Report } from "../models/Report.js";
+import { getFileUrl } from "../utils/fileUrl.js";
 import { resolveTeamDisplayName } from "../services/teamRegistryService.js";
 import { applyTeamLeaderRating, removeTeamLeaderRating, updateTeamLeaderRating } from "../services/teamLeaderRatingService.js";
 import {
@@ -109,7 +110,7 @@ export async function submitFeedback(req, res) {
     }
 
     const comment = String(req.body.comment || "").trim();
-    const photoUrl = req.file ? `/uploads/${req.file.filename}` : "";
+    const photoUrl = getFileUrl(req.file);
     const feedback = {
       rating,
       comment,
@@ -181,7 +182,7 @@ export async function updateFeedback(req, res) {
     const oldRating = report.feedback.rating;
     const comment = String(req.body.comment || "").trim();
     const photoUrl = req.file
-      ? `/uploads/${req.file.filename}`
+      ? getFileUrl(req.file)
       : report.feedback.photoUrl || "";
 
     report.feedback = {

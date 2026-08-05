@@ -1,4 +1,5 @@
 import { enrollAdminTeam, isValidTeamName, resolveTeamDisplayName } from "../services/teamRegistryService.js";
+import { getFileUrl } from "../utils/fileUrl.js";
 import { generateResidentIdCandidate, generateTeamIdCandidate } from "../utils/userIds.js";
 import {
   findUserByEmail,
@@ -68,7 +69,7 @@ async function uniqueTeamId(teamName) {
 }
 
 function fileUrl(file) {
-  return file ? `/uploads/${file.filename}` : "";
+  return getFileUrl(file);
 }
 
 export async function register(req, res) {

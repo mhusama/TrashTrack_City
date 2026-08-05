@@ -1,6 +1,7 @@
 import { Report } from "../models/Report.js";
 import { resolveTeamDisplayName } from "../services/teamRegistryService.js";
 import { sendReportNotification } from "../utils/mailer.js";
+import { getFileUrl } from "../utils/fileUrl.js";
 import {
   notifyResidentsAboutNewReport,
   notifyStatusChange,
@@ -191,7 +192,7 @@ export async function createReport(req, res) {
       });
     }
 
-    const photoUrl = req.file ? `/uploads/${req.file.filename}` : "";
+    const photoUrl = getFileUrl(req.file);
     const reportId = await generateUniqueReportId();
 
     const report = await Report.create({
@@ -386,7 +387,7 @@ export async function updateReport(req, res) {
     };
 
     if (req.file) {
-      report.photoUrl = `/uploads/${req.file.filename}`;
+      report.photoUrl = getFileUrl(req.file);
     }
 
     report.createdAt = new Date();

@@ -1,4 +1,5 @@
 import { Report } from "../models/Report.js";
+import { getFileUrl } from "../utils/fileUrl.js";
 import { Vehicle } from "../models/Vehicle.js";
 import { getUserModel } from "../models/User.js";
 import { resolveTeamDisplayName } from "../services/teamRegistryService.js";
@@ -148,7 +149,7 @@ export async function submitUpdatedTaskReport(req, res) {
       });
     }
 
-    const imageUrl = req.file ? `/uploads/${req.file.filename}` : "";
+    const imageUrl = getFileUrl(req.file);
     const today = new Date().toLocaleDateString("en-GB", {
       day: "numeric",
       month: "long",

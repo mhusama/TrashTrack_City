@@ -1,4 +1,5 @@
 import { LeadershipChatMessage } from "../models/LeadershipChatMessage.js";
+import { getFileUrl } from "../utils/fileUrl.js";
 
 function formatMessage(message, userId) {
   return {
@@ -27,8 +28,8 @@ export async function listLeadershipMessages(req, res) {
 export async function postLeadershipMessage(req, res) {
   try {
     const { text, replyToMessageId } = req.body;
-    const imageUrl = req.files?.image?.[0] ? `/uploads/${req.files.image[0].filename}` : "";
-    const voiceUrl = req.files?.voice?.[0] ? `/uploads/${req.files.voice[0].filename}` : "";
+    const imageUrl = getFileUrl(req.files?.image?.[0]);
+    const voiceUrl = getFileUrl(req.files?.voice?.[0]);
 
     if (!text?.trim() && !imageUrl && !voiceUrl) {
       return res.status(400).json({ message: "Message, image, or voice is required" });
