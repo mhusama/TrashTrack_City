@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { mediaUrl } from "../utils/mediaUrl.js";
 
 /** Banner slides from backend/uploads — order and filenames as specified. */
 const BANNER_SLIDES = [
@@ -20,7 +19,7 @@ export default function LandingHeroBanner() {
     return () => clearInterval(timer);
   }, []);
 
-  const src = mediaUrl(BANNER_SLIDES[index]);
+  const src = BANNER_SLIDES[index];
 
   return (
     <section className="landing-hero-banner" aria-label="City cleanliness highlights">
