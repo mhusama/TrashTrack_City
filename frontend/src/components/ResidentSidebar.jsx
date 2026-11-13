@@ -4,6 +4,7 @@ const RESIDENT_NAV_ITEMS = [
   { id: "dashboard", label: "Dashboard" },
   { id: "new-report", label: "New Report" },
   { id: "reports", label: "My Reports" },
+  { id: "review-service", label: "Review Service" },
   { id: "map", label: "Map" },
   { id: "community-feed", label: "Community Feed" },
   { id: "statistics", label: "Statistics" },
@@ -22,6 +23,7 @@ export default function ResidentSidebar({ activeView, onViewChange }) {
             <li key={item.id}>
               <button
                 type="button"
+                id={`nav-${item.id}`}
                 onClick={() => onViewChange(item.id)}
                 className={`admin-sidebar-link w-full rounded-lg border px-3 py-2.5 text-left text-sm font-medium transition-colors ${
                   activeView === item.id

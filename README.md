@@ -1,114 +1,75 @@
-# TrashTrack City
+# TrashTrack City - Automated Selenium Testing (Problem 13)
 
-Sample **MERN** stack app for reporting and tracking city waste issues. Residents submit geotagged reports with optional photos; admins can update report status.
+Automated test framework using **Selenium WebDriver**, **Python**, and **openpyxl** for Problem 13: **Browser Alerts, Prompt Dialogs, and Embedded IFrames**.
 
-## Stack
+---
 
-| Layer    | Tech |
-|----------|------|
-| MongoDB  | Mongoose |
-| Express  | REST API, Multer uploads, Nodemailer (optional) |
-| React    | Vite 8, React 19, React Router 7 |
-| Node     | ES modules |
+## 1. Test Cases Overview
 
-**Frontend extras:** Tailwind CSS 4, Leaflet map, Framer Motion, react-easy-crop, react-hot-toast, Axios, Lucide icons.
+The test cases are read from [`test_cases_input.xlsx`](file:///e:/TrashTrack_City/TrashTrack_City/test_cases_input.xlsx) and recorded to [`test_cases_output.xlsx`](file:///e:/TrashTrack_City/TrashTrack_City/test_cases_output.xlsx).
 
-## Project structure
+| Test ID | Module | Test Name | Description & Actions | Expected Result | Fail-Fast Rule |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **TC01** | **Smoke** | Enter Site Main Page | Check if frontend is accessible and `#root` renders. | Document title contains `"TrashTrack City"`. | **Critical:** If FAIL, abort subsequent tests. |
+| **TC02** | **Smoke** | Resident Login Check | Authenticate resident using `res1@gmail.com` / `flower`. | Redirects to resident dashboard `/` with user session. | **Critical:** If FAIL, abort subsequent tests. |
+| **TC03** | **Alert** | Submit Empty Report Form | Click submit on New Report with empty title. | Native JS alert pops up with text: `"Title Missing"`. | Normal |
+| **TC04** | **Confirm** | Submit Proper Report Form | Fill title, category, description, smell, and waste spread area; click submit. | Native JS confirm pops up with text: `"Confirm Report Submission?"`. | Normal |
+| **TC05** | **IFrame** | Assert Full Name Input in IFrame | Switch into `#city-survey-iframe` using `driver.switch_to.frame()`. | Finds `#survey-resident-name` input box with label `"Resident Full Name:"`. | Normal |
+| **TC06** | **IFrame** | Assert Overall Collection Satisfaction | Inspect `#survey-rating` dropdown inside `#city-survey-iframe`. | Finds 5 options representing 1 to 5 stars (`['1 Star', '2 Stars', '3 Stars', '4 Stars', '5 Stars']`). | Normal |
+| **TC07** | **Alert** | Submit Survey Without Name | Inside iframe, leave full name empty and click submit. | Native JS alert pops up with text: `"Full Name Missing"`. | Normal |
+| **TC08** | **Confirm** | Submit Survey & Confirm Review | Fill survey form inside iframe and click submit. | Native JS confirm pops up with text: `"Confirm Review?"`. | Normal |
+| **TC09** | **Prompt** | Edit Profile Password Prompt | On `/profile`, click Save Changes. | Native JS prompt pops up with text: `"Please enter your old password:"`. | Normal |
 
-```
-TrashTrack_City/
-├── backend/          # Express API
-│   └── src/
-│       ├── server.js
-│       ├── models/     # User, Report
-│       ├── routes/
-│       └── ...
-└── frontend/         # Vite + React SPA
-    └── src/
-        ├── pages/
-        ├── components/
-        └── api/
-```
+---
 
-## Prerequisites
+## 2. Prerequisites & Setup
 
-- [Node.js](https://nodejs.org/) 20+
-- [MongoDB](https://www.mongodb.com/) running locally or Atlas URI
-
-## Quick start
-
-### 1. Backend
-
+Ensure the required Python libraries are installed:
 ```bash
-cd backend
-cp .env.example .env
-# Edit .env — set MONGODB_URI and JWT_SECRET
-npm install
-npm run dev
+pip install selenium openpyxl pandas
 ```
 
-API: `http://localhost:5000`  
-Health: `GET /api/health`
+---
 
-### 2. Frontend
+## 3. Running the Tests
 
+### Step 1: Start the Backend & Frontend Servers
+* **Terminal 1 (Backend):**
+  ```bash
+  cd backend
+  npm run dev
+  ```
+* **Terminal 2 (Frontend):**
+  ```bash
+  cd frontend
+  npm run dev
+  ```
+
+### Step 2: (Optional) Re-Generate the Input Excel File
+The input file [`test_cases_input.xlsx`](file:///e:/TrashTrack_City/TrashTrack_City/test_cases_input.xlsx) is pre-generated. To re-generate it at any time:
 ```bash
-cd frontend
-cp .env.example .env
-# Optional: VITE_API_URL=http://localhost:5000 (dev uses Vite proxy if empty)
-npm install
-npm run dev
+python generate_input_excel.py
 ```
 
-App: `http://localhost:5173`
+### Step 3: Run the Selenium Test Suite
+* **Interactive Mode** (Watch Chrome execute and handle dialogs & iframes visually):
+  ```bash
+  python stm_excel_example.py
+  ```
+* **Headless Mode** (Fast, background execution):
+  ```bash
+  python stm_excel_example.py --headless
+  ```
+* **One-Click PowerShell Runner** (Automatically starts backend & frontend, runs tests, and cleans up):
+  ```powershell
+  powershell -ExecutionPolicy Bypass -File .\run_tests.ps1
+  ```
 
-## API overview
+---
 
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| POST | `/api/auth/register` | — | Create account |
-| POST | `/api/auth/login` | — | Sign in |
-| GET | `/api/auth/me` | Bearer | Current user |
-| GET | `/api/reports` | Bearer | List reports |
-| POST | `/api/reports` | Bearer | Create report (multipart: `photo`) |
-| PATCH | `/api/reports/:id/status` | Admin | Update status |
-| DELETE | `/api/reports/:id` | Bearer | Delete own report (or admin) |
+## 4. Viewing the Output Report
 
-### Admin user
-
-Register through the app with role **Admin**, or insert directly into the **`tt_admin`** database (`users` collection) on your cluster. Residents and app data (reports, notifications) stay in the **`test`** database (or the name set by `MONGODB_DB_NAME`). Cleaning crew accounts are stored in the **`c_c`** database.
-
-> **Note:** Do not use MongoDB’s built-in `admin` database for app accounts (used for Atlas login). That causes “not authorized” errors. Use `tt_admin` instead (set `MONGODB_ADMIN_DB_NAME`).
-
-### MongoDB databases
-
-| Database | Contents |
-|----------|----------|
-| `test` (default via `MONGODB_DB_NAME`) | Residents, reports, notifications |
-| `tt_admin` | Admin accounts and credentials |
-| `c_c` | Cleaning crew accounts and credentials |
-
-Configure in `backend/.env` — see `backend/.env.example`. Staff URIs are derived from `MONGODB_URI` when `MONGODB_URI_ADMIN` / `MONGODB_URI_CREW` are omitted.
-
-## Environment
-
-**Backend** (`backend/.env`):
-
-- `PORT` — default `5000`
-- `MONGODB_URI` — Mongo cluster connection string
-- `MONGODB_DB_NAME` — main app database (default `test`: residents, reports)
-- `MONGODB_ADMIN_DB_NAME` — admin accounts database (default `tt_admin`; not MongoDB’s `admin` auth DB)
-- `MONGODB_URI_ADMIN` — optional full URI override for admin accounts DB
-- `MONGODB_URI_CREW` — optional; defaults to `c_c` database on the same cluster
-- `JWT_SECRET` — token signing secret
-- `CLIENT_URL` — frontend origin for CORS and password reset links (2-minute expiry)
-- `SMTP_*` — email for password reset and report notifications (see `backend/.env.example`)
-  - Test: `cd backend && npm run test:smtp -- your@email.com`
-
-**Frontend** (`frontend/.env`):
-
-- `VITE_API_URL` — API base URL (leave empty in dev to use Vite proxy)
-
-## License
-
-ISC
+Open [`test_cases_output.xlsx`](file:///e:/TrashTrack_City/TrashTrack_City/test_cases_output.xlsx) in Excel or LibreOffice Calc:
+* **Status Badges:** Color-coded `PASS` (green), `FAIL` (red), and `SKIPPED` (yellow).
+* **Actual Values:** Captured message strings from alerts, confirms, prompts, and the iframe DOM.
+* **Timestamps:** Exact time of execution for each test case.

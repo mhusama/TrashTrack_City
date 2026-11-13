@@ -9,8 +9,7 @@ export default function NewReportPage() {
   const handleSubmit = async (form, photoFile) => {
     try {
       await reportsApi.create(buildFormData(form, photoFile));
-      toast.success("Report submitted");
-      navigate("/");
+      toast.success("Report submitted successfully");
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to submit report");
       throw err;

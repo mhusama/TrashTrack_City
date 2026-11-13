@@ -169,6 +169,22 @@ export default function HomePage() {
   });
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const viewParam = params.get("view");
+    if (viewParam) {
+      handleViewChange(viewParam);
+    }
+
+    const handleMessage = (e) => {
+      if (e.data && e.data.type === "NAVIGATE_VIEW" && e.data.view) {
+        handleViewChange(e.data.view);
+      }
+    };
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, []);
+
+  useEffect(() => {
     loadReports();
     const refreshTimer = setInterval(loadReports, 30_000);
     return () => clearInterval(refreshTimer);
@@ -198,6 +214,7 @@ export default function HomePage() {
   const showMap = activeView === "map";
   const showStatistics = activeView === "statistics";
   const showCommunityFeed = activeView === "community-feed";
+  const showReviewService = activeView === "review-service";
   const showContactUs = activeView === "contact-us";
   const showNewReport = activeView === "new-report";
 
@@ -286,6 +303,24 @@ export default function HomePage() {
         {showCommunityFeed && (
           <section className="card p-6">
             <CommunityFeedPanel />
+          </section>
+        )}
+
+        {showReviewService && (
+          <section className="card p-4 sm:p-6 bg-white rounded-lg shadow-sm border border-theme-border">
+            <h2 id="survey-parent-title" className="mb-1 text-xl font-bold text-black">
+              Review Service & City Cleanliness Survey
+            </h2>
+            <p id="survey-parent-desc" className="mb-4 text-sm text-black/80">
+              Provide direct feedback on municipal collection schedules and neighborhood sanitation.
+            </p>
+            <iframe
+              id="city-survey-iframe"
+              name="city-survey-iframe"
+              src="/city-survey.html"
+              title="City Cleanliness Survey"
+              className="w-full h-[620px] border border-gray-200 rounded-md bg-gray-50"
+            />
           </section>
         )}
 

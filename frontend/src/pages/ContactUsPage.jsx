@@ -29,6 +29,19 @@ export default function ContactUsPage() {
         </p>
       </div>
 
+      <div className="card p-3 sm:p-4 bg-[#fdf2f4] border border-[#fce1ee] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-lg">
+        <div>
+          <p className="text-sm font-semibold text-[#6b0f1a]">Official City Sanitation Survey</p>
+          <p className="text-xs text-black/70">Rate waste collection and STS bin clearance in your ward via our embedded municipal portal.</p>
+        </div>
+        <Link
+          to="/survey"
+          className="shrink-0 px-3 py-1.5 bg-[#6b0f1a] text-white rounded text-xs font-medium hover:bg-[#851320] transition"
+        >
+          Open City Survey →
+        </Link>
+      </div>
+
       <section className="card p-4 sm:p-6">
         <ContactUsForm user={user} showHistory={Boolean(user)} />
       </section>

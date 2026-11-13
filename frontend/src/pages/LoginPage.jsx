@@ -113,6 +113,7 @@ export default function LoginPage() {
           <label className="block space-y-1">
             <span className="label-text">Role</span>
             <select
+              id="login-role-select"
               value={role}
               onChange={(e) => setRole(e.target.value)}
               className="input-field"
@@ -146,6 +147,7 @@ export default function LoginPage() {
           <label className="block space-y-1">
             <span className="label-text">Email</span>
             <input
+              id="login-email-input"
               type="email"
               name="email"
               autoComplete="username"
@@ -159,6 +161,7 @@ export default function LoginPage() {
           <label className="block space-y-1">
             <span className="label-text">Password</span>
             <PasswordInput
+              id="login-password-input"
               name="password"
               autoComplete="current-password"
               required
@@ -179,7 +182,7 @@ export default function LoginPage() {
             Forgot password?
           </button>
         </div>
-        <button type="submit" disabled={loading} className="btn-primary w-full py-3">
+        <button type="submit" id="login-submit-btn" disabled={loading} className="btn-primary w-full py-3">
           {loading ? "Signing in…" : "Sign in"}
         </button>
       </form>

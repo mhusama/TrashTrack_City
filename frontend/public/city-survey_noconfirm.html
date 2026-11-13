@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>City Cleanliness & Waste Management Survey (Faulty - No Confirm)</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f8fafc;
+      color: #1e293b;
+      margin: 0;
+      padding: 16px;
+    }
+    .survey-container {
+      max-width: 540px;
+      margin: 0 auto;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    h3 {
+      margin-top: 0;
+      color: #6b0f1a;
+      font-size: 18px;
+      border-bottom: 2px solid #fce1ee;
+      padding-bottom: 8px;
+    }
+    p.subtitle {
+      font-size: 13px;
+      color: #64748b;
+      margin-top: -4px;
+      margin-bottom: 16px;
+    }
+    .form-group {
+      margin-bottom: 14px;
+    }
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 5px;
+      color: #334155;
+    }
+    input[type="text"], select, textarea {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      font-size: 13px;
+      box-sizing: border-box;
+      background: #fff;
+    }
+    input[type="text"]:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: #6b0f1a;
+      box-shadow: 0 0 0 2px rgba(107, 15, 26, 0.15);
+    }
+    button[type="submit"] {
+      background: #6b0f1a;
+      color: #ffffff;
+      border: none;
+      padding: 9px 18px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button[type="submit"]:hover {
+      background: #851320;
+    }
+    #survey-status {
+      margin-top: 14px;
+      padding: 10px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      background: #f1f5f9;
+      color: #475569;
+    }
+    #survey-status.success {
+      background: #dcfce7;
+      color: #166534;
+      border: 1px solid #86efac;
+    }
+  </style>
+</head>
+<body>
+  <div class="survey-container">
+    <h3>Dhaka City Waste Management & Cleanliness Survey</h3>
+    <p class="subtitle">Official Resident Review Service — Department of Waste & Sanitation</p>
+
+    <form id="city-survey-form" onsubmit="handleSurveySubmit(event)" novalidate>
+      <div class="form-group">
+        <label for="survey-resident-name" id="resident-name-label">Resident Full Name:</label>
+        <input
+          type="text"
+          id="survey-resident-name"
+          name="residentName"
+          placeholder="Enter resident full name"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="survey-ward" id="ward-label">Municipal Ward / Neighborhood:</label>
+        <select id="survey-ward" name="ward">
+          <option value="Ward 19 (Gulshan/Banani)">Ward 19 (Gulshan/Banani)</option>
+          <option value="Ward 32 (Dhanmondi)">Ward 32 (Dhanmondi)</option>
+          <option value="Ward 10 (Mirpur)">Ward 10 (Mirpur)</option>
+          <option value="Ward 24 (Tejgaon)">Ward 24 (Tejgaon)</option>
+          <option value="Ward 05 (Uttara)">Ward 05 (Uttara)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="survey-rating" id="satisfaction-label">Overall Collection Satisfaction</label>
+        <select id="survey-rating" name="rating">
+          <option value="1">1 Star</option>
+          <option value="2">2 Stars</option>
+          <option value="3">3 Stars</option>
+          <option value="4">4 Stars</option>
+          <option value="5">5 Stars</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="survey-comments">Suggestions / Area Concerns:</label>
+        <textarea
+          id="survey-comments"
+          name="comments"
+          rows="3"
+          placeholder="e.g. Need additional secondary transfer stations near Road 11..."
+        ></textarea>
+      </div>
+
+      <button type="submit" id="survey-submit-btn">Submit Survey</button>
+    </form>
+
+    <div id="survey-status">Awaiting Submission</div>
+  </div>
+
+  <script>
+    function handleSurveySubmit(e) {
+      e.preventDefault();
+      const nameInput = document.getElementById('survey-resident-name');
+      const name = nameInput ? nameInput.value.trim() : '';
+
+      // Requirement 5: Full Name validation alert remains intact
+      if (!name) {
+        window.alert("Full Name Missing");
+        return;
+      }
+
+      // INTENTIONAL DEFECT FOR TESTING:
+      // The JS Confirm ("Confirm Review?") is REMOVED/OMITTED completely.
+      // Directly updates status without asking for user confirmation.
+      const statusBox = document.getElementById('survey-status');
+      statusBox.className = 'success';
+      statusBox.innerText = `Review submitted directly without confirm dialog. Thank you, ${name}.`;
+    }
+  </script>
+</body>
+</html>

@@ -60,6 +60,11 @@ function isNgrokHost(hostname) {
   );
 }
 
+function isVercelHost(hostname) {
+  if (!hostname) return false;
+  return hostname.toLowerCase().endsWith(".vercel.app");
+}
+
 function isAllowedOrigin(origin) {
   if (!origin) return true;
   const normalized = origin.trim().replace(/\/$/, "");
@@ -67,7 +72,11 @@ function isAllowedOrigin(origin) {
   try {
     const { hostname, protocol } = new URL(origin);
     if (protocol !== "http:" && protocol !== "https:") return false;
-    return isPrivateNetworkHost(hostname) || isNgrokHost(hostname);
+    return (
+      isPrivateNetworkHost(hostname) ||
+      isNgrokHost(hostname) ||
+      isVercelHost(hostname)
+    );
   } catch {
     return false;
   }

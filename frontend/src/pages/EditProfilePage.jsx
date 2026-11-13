@@ -49,12 +49,19 @@ export default function EditProfilePage() {
       return;
     }
 
+    // Requirement 7: A JS Prompt will tell the user to type the old password
+    const oldPassword = window.prompt("Please enter your old password:");
+    if (oldPassword === null) {
+      return;
+    }
+
     setLoading(true);
     try {
       const fd = new FormData();
       fd.append("name", form.name.trim());
       fd.append("email", form.email.trim());
       fd.append("phone", form.phone.trim());
+      if (oldPassword) fd.append("oldPassword", oldPassword);
       if (form.password) fd.append("password", form.password);
       if (profilePicture) fd.append("profilePicture", profilePicture);
 
@@ -106,6 +113,7 @@ export default function EditProfilePage() {
         <label className="block space-y-1">
           <span className="label-text">Full name</span>
           <input
+            id="profile-name-input"
             required
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
@@ -116,6 +124,7 @@ export default function EditProfilePage() {
         <label className="block space-y-1">
           <span className="label-text">Email</span>
           <input
+            id="profile-email-input"
             type="email"
             required
             value={form.email}
@@ -127,6 +136,7 @@ export default function EditProfilePage() {
         <label className="block space-y-1">
           <span className="label-text">Phone</span>
           <input
+            id="profile-phone-input"
             type="tel"
             required
             value={form.phone}
@@ -181,7 +191,7 @@ export default function EditProfilePage() {
           />
         </label>
 
-        <button type="submit" disabled={loading} className="btn-primary w-full py-3">
+        <button type="submit" id="save-profile-btn" disabled={loading} className="btn-primary w-full py-3">
           {loading ? "Saving…" : "Save changes"}
         </button>
       </form>

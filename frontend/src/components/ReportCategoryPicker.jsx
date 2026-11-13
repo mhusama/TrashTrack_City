@@ -77,6 +77,7 @@ export default function ReportCategoryPicker({ category, subcategory, onChange, 
       >
         <button
           type="button"
+          id="report-category-select-btn"
           onClick={() => setOpen((value) => !value)}
           disabled={loading}
           className="input-field flex w-full items-center justify-between text-left disabled:opacity-60 disabled:cursor-not-allowed"
@@ -105,6 +106,7 @@ export default function ReportCategoryPicker({ category, subcategory, onChange, 
                 >
                   <button
                     type="button"
+                    id={`category-opt-${group.value}`}
                     disabled={loading}
                     onClick={() => handleCategorySelect(group.value)}
                     className={`flex w-full items-center justify-between px-4 py-2 text-left text-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed hover:bg-[#6b0f1a] hover:text-white ${
@@ -126,6 +128,7 @@ export default function ReportCategoryPicker({ category, subcategory, onChange, 
                   <button
                     key={sub.value}
                     type="button"
+                    id={`subcategory-opt-${sub.value}`}
                     disabled={loading}
                     onClick={() => handleSubcategorySelect(activeGroup.value, sub.value)}
                     className={`block w-full px-4 py-2 text-left text-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed hover:bg-[#6b0f1a] hover:text-white ${

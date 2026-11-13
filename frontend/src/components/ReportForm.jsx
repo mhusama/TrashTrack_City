@@ -112,6 +112,12 @@ export default function ReportForm({
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Requirement 1: If user doesn't put title, create JS alert: "Title Missing"
+    if (!form.title || !form.title.trim()) {
+      window.alert("Title Missing");
+      return;
+    }
+
     if (!form.category) {
       toast.error("Please select a category");
       return;
@@ -128,6 +134,12 @@ export default function ReportForm({
       return;
     }
 
+    // Requirement 2: When report is submitted, a JS Confirm will appear: "Confirm Report Submission?"
+    const confirmed = window.confirm("Confirm Report Submission?");
+    if (!confirmed) {
+      return;
+    }
+
     setSubmitting(true);
     try {
       await onSubmit(form, photoFile);
@@ -137,12 +149,13 @@ export default function ReportForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="new-report-form space-y-6">
+    <form onSubmit={handleSubmit} noValidate className="new-report-form space-y-6">
       <div className="new-report-column space-y-4">
         <label className="block space-y-1">
           <span className="label-text">Title</span>
           <input
-            required
+            id="report-title-input"
+            name="title"
             value={form.title}
             onChange={(e) => setForm({ ...form, title: e.target.value })}
             className="input-field"
@@ -152,6 +165,8 @@ export default function ReportForm({
         <label className="block space-y-1">
           <span className="label-text">Description</span>
           <textarea
+            id="report-description-input"
+            name="description"
             rows={4}
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
@@ -174,6 +189,7 @@ export default function ReportForm({
                 className="flex cursor-pointer items-center gap-2 text-sm"
               >
                 <input
+                  id={`smellRisk-${option.value}`}
                   type="radio"
                   name="smellRisk"
                   value={option.value}
@@ -196,6 +212,7 @@ export default function ReportForm({
                 className="flex cursor-pointer items-center gap-2 text-sm"
               >
                 <input
+                  id={`wasteSpreadArea-${option.value}`}
                   type="radio"
                   name="wasteSpreadArea"
                   value={option.value}
@@ -289,7 +306,12 @@ export default function ReportForm({
       </div>
 
       <div className="new-report-submit-row">
-        <button type="submit" disabled={submitting} className="guest-cta-btn px-8 py-3">
+        <button
+          type="submit"
+          id="submit-report-btn"
+          disabled={submitting}
+          className="guest-cta-btn px-8 py-3"
+        >
           {submitting ? "Saving…" : submitLabel}
         </button>
       </div>
